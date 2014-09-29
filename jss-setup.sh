@@ -132,5 +132,9 @@ pushd `dirname $0` 2>&1 > /dev/null
             make clean all
             cp *.so ${TARGETDIR}
         popd
+
+        # add jss4.jar to maven repository
+        mvn install:install-file -Dfile=jss4.jar -DgroupId=org.mozilla.jss \
+            -DartifactId=jss4 -Dversion=4_3_2_RTM -Dpackaging=jar
     popd
 popd
