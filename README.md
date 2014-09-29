@@ -5,8 +5,8 @@ A FIPS compliant implementation of a password vault for Red Hat JBoss EAP
 
 To set this up, please run the scripts in this order:
 
-  post-server-install.sh
-  jss-setup.sh
+    post-server-install.sh
+    jss-setup.sh
 
 The first script, post-server-install.sh, makes sure that RHEL 6 is fully
 patched with all required development packages installed.  One package
