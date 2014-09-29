@@ -1,15 +1,17 @@
 #!/bin/bash
 
-# This script creates two native libraries and downloads the signed Mozilla
-# Java Security Services (JSS) signed jar.  These are prerequisites for the
-# FIPS compliant security vault implementation.
-# 
-# The specific files downloaded or created are:
+# This script creates a FIPS compliant security vault implementation
+# packaged as a JBoss EAP 6.x module.  The artifact is in the target/modules
+# directory.  The module contains two native libraries, a jar file for
+# the vault implementation and the  signed Mozilla Java Security Services
+# (JSS) jar.
+#
+# The specific files in the module are:
 # 
 #  jss4.jar         - the signed Mozilla JSS library
 #  libjss4.so       - JNI method implementation needed by jss4.jar
 #  libnss_pbkdf2.so - exposes the Mozilla Network Security Services (NSS)
-#                     implementation of PKCS#5 PBKDF2 as a JNI method in
+#                     implementation of PKCS#5 PBKDF2 as a JNI method for
 #                     the vault implementation
 # 
 # The bulk of this script attempts to automate these build instructions
@@ -19,10 +21,12 @@
 #
 # NB: The security vault implementation will only use the platform installed
 #     binaries for NSS and NSPR when accessing NSS through the Mozilla-JSS JCA
-#     provider or the pbkdf2 JNI method.
+#     provider or the pbkdf2 JNI method.  The local builds of NSS and NSPR are
+#     solely for the purpose of building the native shared libraries for the
+#     vault implementation.
 #
 # Any needed dependencies will be downloaded automatically.  This behavior
-# can be bypassed by copying dependencies to the target directory.
+# can be bypassed by copying needed dependencies to the target directory.
 #
 # The version of mercurial available for RHEL 6 is not compatible with the
 # Mozilla source trees.  To work around this, a local build of a newer version
@@ -42,7 +46,7 @@ pushd `dirname $0` 2>&1 > /dev/null
     mkdir -p ${TARGETDIR}
     pushd ${TARGETDIR}
 
-        # this script creates two artifacts
+        # clean up previously built artifacts
         rm -fr modules mozilla
 
         # do local install of mercurial as the older version installed with RHEL
@@ -66,6 +70,9 @@ pushd `dirname $0` 2>&1 > /dev/null
         VER_NSPR=NSPR_`yum list installed nspr 2> /dev/null | \
           grep -i '^nspr\.' | sed 's/  */ /g' | cut -d' ' -f2 | \
           cut -d'-' -f1 | sed 's/\./_/g'`_RTM
+
+        echo " nss version ${VER_NSS} installed"
+        echo "nspr version ${VER_NSPR} installed"
 
         # build NSS and NSPR to support the JSS build only.  The yum installed
         # NSS and NSPR runtimes will actually be used by the Mozilla-JSS JCA
@@ -109,7 +116,7 @@ pushd `dirname $0` 2>&1 > /dev/null
         cd ${TARGETDIR}/mozilla/nss
         gmake nss_build_all
 
-        # make sure artifacts are available for jss build
+        # make sure artifacts are where jss expects
         cp -r coreconf/nsinstall ../jss/security/coreconf
         cp -r ../dist ../jss
 
@@ -136,5 +143,20 @@ pushd `dirname $0` 2>&1 > /dev/null
         # add jss4.jar to maven repository
         mvn install:install-file -Dfile=jss4.jar -DgroupId=org.mozilla.jss \
             -DartifactId=jss4 -Dversion=4_3_2_RTM -Dpackaging=jar
+
+        # build the maven project
+        pushd ${TARGETDIR}/../fips-compliant-vault
+            mvn clean install
+        popd
+
+        # package the artifacts as a module for EAP
+        mkdir -p ${TARGETDIR}/modules/org/jboss/fipscompliant/main/lib/linux-x86_64
+        pushd ${TARGETDIR}/modules/org/jboss/fipscompliant/main
+            cp ${TARGETDIR}/../module.xml .
+            cp ${TARGETDIR}/jss4.jar .
+            cp ${TARGETDIR}/../fips-compliant-vault/target/*.jar .
+            cd lib/linux-x86_64
+            mv ${TARGETDIR}/*.so .
+        popd
     popd
 popd
