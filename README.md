@@ -19,8 +19,7 @@ builds to enable the vault.  The final artifacts are packaged into a
 module that can be deployed to EAP.  See the target/modules directory.
 
 The init-vault.sh script will create the necessary NSS database files
-and pub/priv key pair in order to test this.  The target directory will
-have the module to be deployed to EAP.
+and pub/priv key pair in order to test this.
 
 This is very early days with minimal testing.  At this point, I have
 only tried this on a fully patched RHEL 6.5 guest vm.
