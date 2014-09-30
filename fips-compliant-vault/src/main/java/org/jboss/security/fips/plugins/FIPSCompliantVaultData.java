@@ -1,4 +1,4 @@
-package org.jboss.security.fips.plugins;
+package com.redhat.fips;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.jboss.security.fips.plugins;
+package com.redhat.fips;
 
 import java.io.Closeable;
 import java.io.File;
@@ -32,6 +32,7 @@ import org.jboss.logging.Logger;
 import org.jboss.security.Base64Utils;
 import org.jboss.security.vault.SecurityVault;
 import org.jboss.security.vault.SecurityVaultException;
+
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.crypto.CryptoStore;
 import org.mozilla.jss.crypto.CryptoToken;
