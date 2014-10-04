@@ -112,6 +112,13 @@ pushd `dirname $0` 2>&1 > /dev/null
             cp -fr mozilla mozilla.orig
         fi
 
+        # expose a few other local functions for use by the PBKDF2
+        # implementation in the small native library since JSS does
+        # not expose the PBKDF2 functionality that's already in NSS
+
+        FUNC_NAME="Java_org_mozilla_jss_pkcs11_PK11KeyPairGenerator_generateDSAKeyPairWithOpFlags;"
+	sed -i "s/${FUNC_NAME}/${FUNC_NAME}\nJSS_ByteArrayToSECItem;\nJSS_PK11_getTokenSlotPtr;\nJSS_PK11_wrapSymKey;\nJSS_throwMsg;/g" mozilla/jss/security/jss/lib/jss.def
+
         # build nss and nspr to support jss build only
         cd ${TARGETDIR}/mozilla/nss
         gmake nss_build_all
