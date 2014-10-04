@@ -226,7 +226,7 @@ public class FIPSCompliantVault implements SecurityVault {
 		SecretKey maskKey = null;
 		try {
 			// derive the key to unmask the token PIN
-			maskKey = deriveMaskKey(salt);
+			maskKey = nonFipsDeriveMaskKey(salt);
 
 			// log into the cryptographic token
 			tokenPin = unmaskTokenPin(maskedTokenPin, maskKey, iv,
@@ -444,11 +444,12 @@ public class FIPSCompliantVault implements SecurityVault {
 	}
 
 	/**
-	 * Derive a password-based encryption key to unmask the token PIN for the
-	 * NSS database. The SunJCE provider is used here because 1) we can't use
-	 * the Mozilla-JSS JCA provider crytographic functions until we've logged
-	 * into the cryptographic token and 2) the Mozilla-JSS JCA provider does not
-	 * expose the NSS implementation of PBKDF2 from PKCS #5, v2.0.
+	 * Use the SunJCE provider to derive a password-based encryption key to
+	 * unmask the token PIN for the NSS database. The SunJCE provider is used
+	 * here because 1) we can't use the Mozilla-JSS JCA provider crytographic
+	 * functions until we've logged into the cryptographic token and 2) the
+	 * Mozilla-JSS JCA provider does not expose the NSS implementation of PBKDF2
+	 * from PKCS #5, v2.0.
 	 * 
 	 * This is all a bit of overkill since we're using a fixed string for the
 	 * passphrase and a saved salt value to generate the key. We effectively
@@ -457,7 +458,7 @@ public class FIPSCompliantVault implements SecurityVault {
 	 * @return password-based encryption key
 	 * @throws Exception
 	 */
-	private SecretKey deriveMaskKey(byte[] salt) throws Exception {
+	private SecretKey nonFipsDeriveMaskKey(byte[] salt) throws Exception {
 		// fixed string to seed PBE, see http://xkcd.com/221/
 		char[] passphrase = PBE_SEED.toCharArray();
 
