@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.1" name="com.redhat.fips">
+<module xmlns="urn:jboss:module:1.1" name="org.jboss.security.fips.plugins">
   <resources>
     <resource-root path="lib"/>
     <resource-root path="jss4.jar"/>

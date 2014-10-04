@@ -14,7 +14,7 @@
 #include <jssutil.h>
 
 JNIEXPORT jobject JNICALL
-Java_com_redhat_fips_FIPSCompliantVault_deriveKeyFromPassword
+Java_org_jboss_security_fips_plugins_FIPSCompliantVault_deriveKeyFromPassword
     (JNIEnv *env, jclass clazz, jobject token, jbyteArray passBA,
     jbyteArray saltBA, jint iterationCount, jint keyLength)
 {

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.redhat.fips;
+package org.jboss.security.fips.plugins;
 
 import java.io.Closeable;
 import java.io.File;

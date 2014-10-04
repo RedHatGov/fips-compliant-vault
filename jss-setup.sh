@@ -150,8 +150,8 @@ pushd `dirname $0` 2>&1 > /dev/null
         popd
 
         # package the artifacts as a module for EAP
-        mkdir -p ${TARGETDIR}/modules/com/redhat/fips/main/lib/linux-x86_64
-        pushd ${TARGETDIR}/modules/com/redhat/fips/main
+        mkdir -p ${TARGETDIR}/modules/org/jboss/security/fips/plugins/main/lib/linux-x86_64
+        pushd ${TARGETDIR}/modules/org/jboss/security/fips/plugins/main
             cp ${TARGETDIR}/../module.xml .
             cp ${TARGETDIR}/jss4.jar .
             cp ${TARGETDIR}/../fips-compliant-vault/target/*.jar .

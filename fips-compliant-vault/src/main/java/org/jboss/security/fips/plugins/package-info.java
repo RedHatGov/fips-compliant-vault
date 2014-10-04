@@ -5,4 +5,4 @@
  * @author rlucente
  *
  */
-package com.redhat.fips;
+package org.jboss.security.fips.plugins;
