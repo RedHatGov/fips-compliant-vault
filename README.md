@@ -33,14 +33,11 @@ order to test this, please use the script:
 
     init-vault.sh
 
-This will create a directory named 'fips-vault' that contains the needed
-NSS files and the vault itself.  You can also run the commands manually
-and also import a certificate that's from an authorized source for your
-organization.  Please make sure that you include a single cert only with
-a public and private key pair.
+This will create a directory that contains the needed NSS files and the
+vault itself.
 
-The full path to the 'fips-vault' directory needs to be passed as a
-system property named:
+The full path to the NSS directory needs to be passed as a system
+property named:
 
     fips.vault.path
 
