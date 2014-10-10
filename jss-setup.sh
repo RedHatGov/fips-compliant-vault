@@ -166,4 +166,10 @@ pushd `dirname $0` 2>&1 > /dev/null
             mv ${TARGETDIR}/*.so .
         popd
     popd
+
+    # package the artifacts into the dist folder
+    mkdir -p dist/bin
+
+    cp -r ${TARGETDIR}/modules dist
+    cp init-vault.sh dist/bin 
 popd

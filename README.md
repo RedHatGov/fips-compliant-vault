@@ -8,6 +8,14 @@ functions needed to mask sensitive strings in the EAP configuration files.
 Red Hat JBoss EAP itself is not FIPS certified, but it's able to use
 those certified native libraries on RHEL.
 
+Pre-built Binaries for RHEL 6.5
+-------------------------------
+
+The dist folder included in the source distribution contains all the
+required artifacts if you simply want to use this capability and skip
+the build step.  Simply copy the contents of the dist folder to the home
+folder for EAP (e.g. jboss-eap-6.3).
+
 Configure Tools to Build
 ------------------------
 
@@ -26,10 +34,6 @@ the command:
     mvn
 
 is on the executable search path.
-
-The dist folder included in the source distribution contains all the
-required artifacts if you simply want to use this capability and skip
-the build step.
 
 Build and Package the Custom Module
 -----------------------------------
