@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * vaultBlock and attributeName and a value that contains the wrapped or
  * encrypted cryptographic keys and passwords.
  * 
- * @author rlucente
+ * @author Rich Lucente
  */
 public class FIPSCompliantVaultData implements Serializable {
 

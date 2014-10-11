@@ -79,7 +79,7 @@ import org.mozilla.jss.util.Password;
  * bit long value encoded using base-64.</li>
  * </ul>
  * 
- * @author rlucente@redhat.com
+ * @author Rich Lucente
  * @since Sep 20, 2014
  */
 public class FIPSCompliantVault implements SecurityVault {
@@ -88,30 +88,30 @@ public class FIPSCompliantVault implements SecurityVault {
 			.getLogger(FIPSCompliantVault.class);
 
 	// admin key constants
-	private static final String ADMIN_KEY_VAULTBLOCK = "admin";
-	private static final String ADMIN_KEY_ATTRIBUTE = "key";
+	public static final String ADMIN_KEY_VAULTBLOCK = "admin";
+	public static final String ADMIN_KEY_ATTRIBUTE = "key";
 
 	// password masking constants
-	private static final int AES_KEY_LEN = 128;
-	private static final String VAULT_CRYPTO_FULL_ALG = "AES/CBC/PKCS5Padding";
+	public static final int AES_KEY_LEN = 128;
+	public static final String VAULT_CRYPTO_FULL_ALG = "AES/CBC/PKCS5Padding";
 
 	// vault-option names and parsing constants
-	private static final String IV = "IV";
-	private static final String SALT = "SALT";
-	private static final String MASKED_TOKEN_PIN = "TOKEN_PIN";
-	private static final String MASKED_TOKEN_PREFIX = "MASK-";
+	public static final String IV = "IV";
+	public static final String SALT = "SALT";
+	public static final String MASKED_TOKEN_PIN = "TOKEN_PIN";
+	public static final String MASKED_TOKEN_PREFIX = "MASK-";
 
 	// property for directory containing the Mozilla NSS database files
-	private static final String NSSDB_PATH_PROPERTY_NAME = "fips.vault.path";
+	public static final String NSSDB_PATH_PROPERTY_NAME = "fips.vault.path";
 
 	// NIST Special Publication 800-132 recommendations for PBKDF2 algorithm
-	private static final int PBE_SALT_MIN_LEN = 128 / 8;
+	public static final int PBE_SALT_MIN_LEN = 128 / 8;
 
 	// pseudo-random number generator
-	private static final String PRNG_ALGORITHM = "pkcs11prng";
+	public static final String PRNG_ALGORITHM = "pkcs11prng";
 
 	// vault data file
-	private static final String VAULT_CONTENT_FILE = "vault.dat";
+	public static final String VAULT_CONTENT_FILE = "vault.dat";
 
 	/*
 	 * Static initializer to enable the Mozilla-JSS JCA provider and load the

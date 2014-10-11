@@ -48,7 +48,7 @@ import org.mozilla.jss.util.Password;
 /**
  * Utility functions for FIPS compliant vault cryptography.
  * 
- * @author rlucente@redhat.com
+ * @author Rich Lucente
  * @since Oct 10, 2014
  */
 public class FIPSCryptoUtil {
