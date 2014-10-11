@@ -41,29 +41,20 @@ import java.nio.charset.Charset;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.spec.KeySpec;
 import java.util.Map;
 import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
-import javax.crypto.spec.DESedeKeySpec;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
 
 import org.jboss.logging.Logger;
 import org.jboss.security.Base64Utils;
+import org.jboss.security.fips.utils.FIPSCryptoUtil;
 import org.jboss.security.vault.SecurityVault;
 import org.jboss.security.vault.SecurityVaultException;
-
 import org.mozilla.jss.CryptoManager;
-import org.mozilla.jss.crypto.CryptoStore;
 import org.mozilla.jss.crypto.CryptoToken;
-import org.mozilla.jss.crypto.PrivateKey;
-import org.mozilla.jss.crypto.SecretKeyFacade;
-import org.mozilla.jss.crypto.SymmetricKey;
 import org.mozilla.jss.util.Password;
 
 /**
@@ -100,18 +91,9 @@ public class FIPSCompliantVault implements SecurityVault {
 	private static final String ADMIN_KEY_VAULTBLOCK = "admin";
 	private static final String ADMIN_KEY_ATTRIBUTE = "key";
 
-	private static final String ADMIN_KEY_TYPE = "AES";
-	private static final String ADMIN_KEY_WRAP_ALG = "RSA";
-
 	// password masking constants
 	private static final int AES_KEY_LEN = 128;
-	private static final String VAULT_CRYPTO_FULL_ALG = ADMIN_KEY_TYPE
-			+ "/CBC/PKCS5Padding";
-
-	// token pin mask parameters
-	private static final String MASK_ALG_CRYPTO = "DESede";
-	private static final String MASK_ALG_FULL = MASK_ALG_CRYPTO
-			+ "/CBC/PKCS5Padding";
+	private static final String VAULT_CRYPTO_FULL_ALG = "AES/CBC/PKCS5Padding";
 
 	// vault-option names and parsing constants
 	private static final String IV = "IV";
@@ -123,12 +105,7 @@ public class FIPSCompliantVault implements SecurityVault {
 	private static final String NSSDB_PATH_PROPERTY_NAME = "fips.vault.path";
 
 	// NIST Special Publication 800-132 recommendations for PBKDF2 algorithm
-	private static final String PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
-	private static final int PBE_MIN_ITERATION_COUNT = 1000;
 	private static final int PBE_SALT_MIN_LEN = 128 / 8;
-
-	// fixed string to seed PBE, see http://xkcd.com/221/
-	private static final String PBE_SEED = "areallylongthrowawaystringthatdoesnotmatter";
 
 	// pseudo-random number generator
 	private static final String PRNG_ALGORITHM = "pkcs11prng";
@@ -251,11 +228,11 @@ public class FIPSCompliantVault implements SecurityVault {
 		SecretKey maskKey = null;
 		try {
 			// derive the key to unmask the token PIN
-			maskKey = nonFipsDeriveMaskKey(salt);
+			maskKey = FIPSCryptoUtil.nonFipsDeriveMaskKey(salt);
 
 			// log into the cryptographic token
-			tokenPin = unmaskTokenPin(maskedTokenPin, maskKey, iv,
-					sunJCEProvider);
+			tokenPin = FIPSCryptoUtil.unmaskTokenPin(maskedTokenPin, maskKey,
+					iv, sunJCEProvider);
 			fipsToken = CryptoManager.getInstance()
 					.getInternalKeyStorageToken();
 			fipsToken.login(tokenPin);
@@ -273,9 +250,9 @@ public class FIPSCompliantVault implements SecurityVault {
 		 * unmasking the token pin using FIPS compliant cryptography only
 		 */
 		try {
-			maskKey = fipsDeriveMaskKey(salt);
-			Password fipsTokenPin = unmaskTokenPin(maskedTokenPin, maskKey, iv,
-					fipsProvider);
+			maskKey = FIPSCryptoUtil.fipsDeriveMaskKey(fipsToken, salt);
+			Password fipsTokenPin = FIPSCryptoUtil.unmaskTokenPin(
+					maskedTokenPin, maskKey, iv, fipsProvider);
 
 			// logout so we can then login using the fips unmasked token pin
 			fipsToken.logout();
@@ -286,7 +263,7 @@ public class FIPSCompliantVault implements SecurityVault {
 				logErrorAndThrowSVE("unmasked token PIN using FIPS provider"
 						+ " does not match token PIN using SunJCE provider");
 
-			// clear the prior pin and
+			// clear the prior pin and login again
 			tokenPin.clear();
 			tokenPin = fipsTokenPin;
 			fipsToken.login(tokenPin);
@@ -305,8 +282,11 @@ public class FIPSCompliantVault implements SecurityVault {
 		// read raw vault content
 		readVaultContent();
 
-		// extract the admin key
-		adminKey = getAdminKey();
+		// unwrap the admin key
+		byte[] wrappedKey = vaultContent.getVaultData(ADMIN_KEY_VAULTBLOCK,
+				ADMIN_KEY_ATTRIBUTE);
+
+		adminKey = FIPSCryptoUtil.unwrapKey(fipsToken, wrappedKey);
 		if (adminKey == null) {
 			logErrorAndThrowSVE("failed to get admin key from vault");
 		}
@@ -380,11 +360,9 @@ public class FIPSCompliantVault implements SecurityVault {
 			// decrypt the vault value using the admin key
 			byte[] plaintext = null;
 			try {
-				Cipher cipher = Cipher.getInstance(VAULT_CRYPTO_FULL_ALG,
+				plaintext = FIPSCryptoUtil.doCrypto(Cipher.DECRYPT_MODE,
+						VAULT_CRYPTO_FULL_ALG, adminKey, iv, ciphertext,
 						fipsProvider);
-				cipher.init(Cipher.DECRYPT_MODE, adminKey, new IvParameterSpec(
-						iv));
-				plaintext = cipher.doFinal(ciphertext);
 			} catch (Exception e) {
 				logErrorAndThrowSVE("unable to decrypt vault value for '"
 						+ vaultBlock
@@ -437,10 +415,9 @@ public class FIPSCompliantVault implements SecurityVault {
 
 		byte[] ciphertext = new byte[0];
 		try {
-			Cipher cipher = Cipher.getInstance(VAULT_CRYPTO_FULL_ALG,
+			ciphertext = FIPSCryptoUtil.doCrypto(Cipher.ENCRYPT_MODE,
+					VAULT_CRYPTO_FULL_ALG, adminKey, iv, plaintext,
 					fipsProvider);
-			cipher.init(Cipher.ENCRYPT_MODE, adminKey, new IvParameterSpec(iv));
-			ciphertext = cipher.doFinal(plaintext);
 		} catch (Exception e) {
 			String msg = "unable to encrypt vault entry";
 			LOGGER.error(msg);
@@ -450,8 +427,8 @@ public class FIPSCompliantVault implements SecurityVault {
 		Password.wipeChars(attributeValue);
 		Password.wipeBytes(plaintext);
 
-		// concatenate the iv and ciphertext and then store as one byte array in
-		// the vault
+		// concatenate the iv and ciphertext and then store as byte array
+		// in the vault
 		ByteBuffer rawBuffer = ByteBuffer.wrap(new byte[iv.length
 				+ ciphertext.length]);
 		rawBuffer.put(iv);
@@ -466,98 +443,6 @@ public class FIPSCompliantVault implements SecurityVault {
 			LOGGER.error(msg);
 			throw new SecurityVaultException(msg);
 		}
-	}
-
-	/**
-	 * Use the SunJCE provider to derive a password-based encryption key to
-	 * unmask the token PIN for the NSS database. The SunJCE provider is used
-	 * here because 1) we can't use the Mozilla-JSS JCA provider crytographic
-	 * functions until we've logged into the cryptographic token and 2) the
-	 * Mozilla-JSS JCA provider does not expose the NSS implementation of PBKDF2
-	 * from PKCS #5, v2.0.
-	 * 
-	 * This is all a bit of overkill since we're using a fixed string for the
-	 * passphrase and a saved salt value to generate the key. We effectively
-	 * have zero entropy, but it obfuscates the cryptographic token PIN.
-	 * 
-	 * @return password-based encryption key
-	 * @throws Exception
-	 */
-	private SecretKey nonFipsDeriveMaskKey(byte[] salt) throws Exception {
-		// fixed string to seed PBE, see http://xkcd.com/221/
-		char[] passphrase = PBE_SEED.toCharArray();
-
-		// Derive the key that will be used to mask the password. The same key
-		// will be generated as long as the parameters are the same
-		SecretKeyFactory factory = SecretKeyFactory.getInstance(PBE_ALGORITHM,
-				sunJCEProvider);
-		PBEKeySpec pbeSpec = new PBEKeySpec(passphrase, salt,
-				PBE_MIN_ITERATION_COUNT, DESedeKeySpec.DES_EDE_KEY_LEN * 8);
-		SecretKey pbeKey = factory.generateSecret(pbeSpec);
-
-		// convert the generated key to 3DES since that will be used to mask the
-		// password
-		factory = SecretKeyFactory.getInstance(MASK_ALG_CRYPTO, sunJCEProvider);
-		KeySpec keySpec = new DESedeKeySpec(pbeKey.getEncoded());
-		return factory.generateSecret(keySpec);
-	}
-
-	/**
-	 * Use the FIPS compliant library to derive a password-based encryption key
-	 * to unmask the token PIN for the NSS database. This leverages the Mozilla
-	 * NSS implementation of PBKDF2 from PKCS #5, v2.0.
-	 * 
-	 * Again, this is all a bit of overkill since we're using a fixed string for
-	 * the passphrase and a saved salt value to generate the key. We effectively
-	 * have zero entropy, but it obfuscates the cryptographic token PIN.
-	 * 
-	 * @return password-based encryption key
-	 * @throws Exception
-	 */
-	private SecretKey fipsDeriveMaskKey(byte[] salt) throws Exception {
-		// fixed string to seed PBE, see http://xkcd.com/221/
-		byte[] passphrase = PBE_SEED.getBytes("UTF-8");
-
-		// Derive the key that will be used to mask the password. The same key
-		// will be generated as long as the parameters are the same
-		SymmetricKey symKey = deriveKeyFromPassword(fipsToken, passphrase,
-				salt, PBE_MIN_ITERATION_COUNT,
-				DESedeKeySpec.DES_EDE_KEY_LEN * 8);
-		return new SecretKeyFacade(symKey);
-	}
-
-	/**
-	 * Use the certificate private key in the FIPS token crypto store to unwrap
-	 * the admin key.
-	 * 
-	 * @return SecretKey stored in vault file or null if no such SecretKey
-	 *         exists
-	 */
-	private SecretKey getAdminKey() {
-		// read the byte array for the wrapped key
-		byte[] wrappedKey = vaultContent.getVaultData(ADMIN_KEY_VAULTBLOCK,
-				ADMIN_KEY_ATTRIBUTE);
-
-		SecretKey unwrappedKey = null;
-
-		if (wrappedKey != null) {
-			try {
-				// get the private key to unwrap the admin key
-				CryptoStore store = fipsToken.getCryptoStore();
-				PrivateKey priv = store.getPrivateKeys()[0];
-
-				// unwrap the admin key using the cert priv key
-				Cipher cipher = Cipher.getInstance(ADMIN_KEY_WRAP_ALG,
-						fipsProvider);
-				cipher.init(Cipher.UNWRAP_MODE, priv);
-				unwrappedKey = (SecretKey) cipher.unwrap(wrappedKey,
-						ADMIN_KEY_TYPE, Cipher.SECRET_KEY);
-			} catch (Exception e) {
-				LOGGER.error("failed to unwrap the admin key", e);
-			}
-		}
-
-		return unwrappedKey;
 	}
 
 	/**
@@ -631,42 +516,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	}
 
 	/**
-	 * Unmask the NSS token password.
-	 * 
-	 * @param maskedTokenPin
-	 * @param maskKey
-	 * @param tokenPinIv
-	 * @param provider
-	 * @return
-	 * @throws Exception
-	 */
-	private Password unmaskTokenPin(String maskedTokenPin, SecretKey maskKey,
-			byte[] tokenPinIv, Provider provider) throws Exception {
-		// get the encrypted token pin
-		maskedTokenPin = maskedTokenPin.substring(MASKED_TOKEN_PREFIX.length());
-		byte[] ciphertext = Base64Utils.fromb64(maskedTokenPin);
-
-		// decrypt the token pin using the derived secret key
-		Cipher cipher = Cipher.getInstance(MASK_ALG_FULL, provider);
-		cipher.init(Cipher.DECRYPT_MODE, maskKey, new IvParameterSpec(
-				tokenPinIv));
-		byte[] plaintext = cipher.doFinal(ciphertext);
-
-		// convert byte array to char array
-		Charset cs = Charset.forName("UTF-8");
-		char[] password = cs.decode(ByteBuffer.wrap(plaintext)).array();
-
-		// convert so we can log into the token
-		Password tokenPin = new Password(password);
-
-		// wipe the intermediate results from memory
-		Password.wipeBytes(plaintext);
-		Password.wipeChars(password);
-
-		return tokenPin;
-	}
-
-	/**
 	 * @return true if file exists and readable, false otherwise
 	 */
 	private boolean vaultFileExists() {
@@ -697,18 +546,4 @@ public class FIPSCompliantVault implements SecurityVault {
 			quietlyClose(fos);
 		}
 	}
-
-	/**
-	 * Native method that exposes the Mozilla NSS implementation of PKCS#5
-	 * PBKDF2 password-based encryption
-	 * 
-	 * @param token
-	 * @param password
-	 * @param salt
-	 * @param iterationCount
-	 * @param keyLength
-	 * @return symmetric 3des key
-	 */
-	static private native SymmetricKey deriveKeyFromPassword(CryptoToken token,
-			byte[] password, byte[] salt, int iterationCount, int keyLength);
 }
