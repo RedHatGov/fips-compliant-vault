@@ -55,7 +55,7 @@ public class FIPSCryptoUtil {
 
 	private static final Logger LOGGER = Logger.getLogger(FIPSCryptoUtil.class);
 
-	private static final String ADMIN_KEY_TYPE = "AES";
+	public static final String ADMIN_KEY_TYPE = "AES";
 	private static final String ADMIN_KEY_WRAP_ALG = "RSA";
 
 	// token pin mask parameters
@@ -74,7 +74,7 @@ public class FIPSCryptoUtil {
 	private static final String PBE_SEED = "areallylongthrowawaystringthatdoesnotmatter";
 
 	// provider names
-	private static final String FIPS_PROVIDER_NAME = "Mozilla-JSS";
+	public static final String FIPS_PROVIDER_NAME = "Mozilla-JSS";
 	private static final String NONFIPS_PROVIDER_NAME = "SunJCE";
 
 	/*
