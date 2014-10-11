@@ -118,33 +118,37 @@ then
     # the public/private key pair and all of the vaulted passwords.
     certutil -S -k rsa -g 2048 -n vaultcert -t "u,u,u" -v 1197 -x \
         -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=US" -d ${DBDIR} || abort
-fi
+
+    echo
+    echo "The vault store has been successfully initialized and individual masked"
+    echo "passwords can now be added."
+    echo
 
     # launch java tooling to do the following:
     #
     # instantiate but do not initialize password vault
     # request token pin from user
     # login in to token
-    # set random number generator
-    # if vault file does not exist then
-    #     offer option for random salt or they supply one (must be at least
-    #     128 bits in length)
+    #
+    # if vault file does not exist then (passed in as argument)
+    #     set random number generator
+    #     create random salt with 128 bit length
     #     create random iv with 64-bit length 
-    #     FIPSCryptoUtil.fipsDeriveMaskKey to get the mask key
-    #     FIPSCryptoUtil.maskTokenPin to mask the fips token pin
-    #     base64 encode masked token pin, salt, iv
-    #     create random AES key??
+    #
+    #     create random AES key for admin key
     #     FIPSCryptoUtil.wrapKey the random AES Key
-    #     put it in vault file ??
-    # else
-    #     have user supply vault options of masked token pin, iv, salt that match config as base-64 values
+    #
+    #     put it in vault file
+    #     write vault file
     # fi
-    # put vault options in map
-    # NOW initialize the vault with the map
+    #
+    # FIPSCryptoUtil.fipsDeriveMaskKey to get the mask key
+    # FIPSCryptoUtil.maskTokenPin to mask the fips token pin
+    # base64 encode masked token pin, salt, iv (these are vault options)
+    # put vault options in a map
+    #
+    # initialize the password vault (should work since vault options and admin key)
+    #
     # prompt user to add/remove entries with vault store/retrieve/remove
-    # display all vault options
-
-    echo
-    echo "The vault store has been successfully initialized and individual masked"
-    echo "passwords can now be added."
-    echo
+    # when done, display vault options
+fi
