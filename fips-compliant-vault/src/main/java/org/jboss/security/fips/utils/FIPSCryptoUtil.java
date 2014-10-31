@@ -24,12 +24,15 @@ package org.jboss.security.fips.utils;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.KeySpec;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESedeKeySpec;
@@ -56,7 +59,9 @@ public class FIPSCryptoUtil {
 	private static final Logger LOGGER = Logger.getLogger(FIPSCryptoUtil.class);
 
 	public static final String ADMIN_KEY_TYPE = "AES";
+	private static final int ADMIN_KEY_LENGTH = 128;
 	private static final String ADMIN_KEY_WRAP_ALG = "RSA";
+
 
 	// token pin mask parameters
 	private static final String MASK_ALG_CRYPTO = "DESede";
@@ -72,6 +77,9 @@ public class FIPSCryptoUtil {
 
 	// fixed string to seed PBE, see http://xkcd.com/221/
 	private static final String PBE_SEED = "areallylongthrowawaystringthatdoesnotmatter";
+
+	// pseudo-random number generator
+	public static final String PRNG_ALGORITHM = "pkcs11prng";
 
 	// provider names
 	public static final String FIPS_PROVIDER_NAME = "Mozilla-JSS";
@@ -113,6 +121,22 @@ public class FIPSCryptoUtil {
 		Cipher cipher = Cipher.getInstance(algorithm, provider);
 		cipher.init(mode, symmetricKey, new IvParameterSpec(iv));
 		return cipher.doFinal(data);
+	}
+
+	/**
+	 * Generates an admin key used to mask vault items.
+	 * @return generated admin key
+	 * @throws NoSuchAlgorithmException
+	 */
+	public static SecretKey generateAdminKey() throws NoSuchAlgorithmException {
+		Provider fipsProvider = Security.getProvider(FIPS_PROVIDER_NAME);
+		SecureRandom random = SecureRandom.getInstance(PRNG_ALGORITHM,
+				fipsProvider);
+
+		KeyGenerator keyGen = KeyGenerator.getInstance(ADMIN_KEY_TYPE,
+				fipsProvider);
+		keyGen.init(ADMIN_KEY_LENGTH, random);
+		return keyGen.generateKey();
 	}
 
 	/**

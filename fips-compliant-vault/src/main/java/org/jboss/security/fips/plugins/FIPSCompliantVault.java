@@ -28,13 +28,7 @@
  */
 package org.jboss.security.fips.plugins;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -51,6 +45,7 @@ import javax.crypto.spec.DESKeySpec;
 import org.jboss.logging.Logger;
 import org.jboss.security.Base64Utils;
 import org.jboss.security.fips.utils.FIPSCryptoUtil;
+import org.jboss.security.fips.utils.FIPSVaultFileUtil;
 import org.jboss.security.vault.SecurityVault;
 import org.jboss.security.vault.SecurityVaultException;
 import org.mozilla.jss.CryptoManager;
@@ -107,12 +102,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	// NIST Special Publication 800-132 recommendations for PBKDF2 algorithm
 	public static final int PBE_SALT_MIN_LEN = 128 / 8;
 
-	// pseudo-random number generator
-	public static final String PRNG_ALGORITHM = "pkcs11prng";
-
-	// vault data file
-	public static final String VAULT_CONTENT_FILE = "vault.dat";
-
 	/*
 	 * Static initializer to enable the Mozilla-JSS JCA provider and load the
 	 * small native library to expose the Mozilla NSS PBKDF2 function. This
@@ -153,13 +142,12 @@ public class FIPSCompliantVault implements SecurityVault {
 	private FIPSCompliantVaultData vaultContent = null;
 	private boolean finishedInit = false;
 
-	// fully qualified path of vault directory
-	private String vaultDir;
+	// utility to read/write vault file
+	private FIPSVaultFileUtil fileUtil = new FIPSVaultFileUtil();
 
 	/**
 	 * @see org.jboss.security.vault.SecurityVault#exists(String, String)
 	 */
-	@Override
 	public boolean exists(String vaultBlock, String attributeName)
 			throws SecurityVaultException {
 		return vaultContent.getVaultData(vaultBlock, attributeName) != null;
@@ -168,7 +156,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	/*
 	 * @see org.jboss.security.vault.SecurityVault#handshake(java.util.Map)
 	 */
-	@Override
 	public byte[] handshake(Map<String, Object> handshakeOptions)
 			throws SecurityVaultException {
 		// doesn't do anything meaningful in this implementation
@@ -178,7 +165,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	/*
 	 * @see org.jboss.security.vault.SecurityVault#init(java.util.Map)
 	 */
-	@Override
 	public void init(Map<String, Object> options) throws SecurityVaultException {
 		if (options == null || options.isEmpty())
 			logErrorAndThrowSVE("required options missing or empty");
@@ -269,7 +255,8 @@ public class FIPSCompliantVault implements SecurityVault {
 			fipsToken.login(tokenPin);
 
 			// set the random source
-			random = SecureRandom.getInstance(PRNG_ALGORITHM, fipsProvider);
+			random = SecureRandom.getInstance(FIPSCryptoUtil.PRNG_ALGORITHM,
+					fipsProvider);
 		} catch (Exception e) {
 			logErrorAndThrowSVE(
 					"failed to log into cryptographic token using FIPS derived key",
@@ -280,7 +267,7 @@ public class FIPSCompliantVault implements SecurityVault {
 		tokenPin.clear();
 
 		// read raw vault content
-		readVaultContent();
+		vaultContent = fileUtil.readVaultContent();
 
 		// unwrap the admin key
 		byte[] wrappedKey = vaultContent.getVaultData(ADMIN_KEY_VAULTBLOCK,
@@ -299,7 +286,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	/*
 	 * @see org.jboss.security.vault.SecurityVault#isInitialized()
 	 */
-	@Override
 	public boolean isInitialized() {
 		return finishedInit;
 	}
@@ -307,7 +293,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	/*
 	 * @see org.jboss.security.vault.SecurityVault#keyList()
 	 */
-	@Override
 	public Set<String> keyList() throws SecurityVaultException {
 		return vaultContent.getVaultDataKeys();
 	}
@@ -316,7 +301,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	 * @see org.jboss.security.vault.SecurityVault#remove(java.lang.String,
 	 * java.lang.String, byte[])
 	 */
-	@Override
 	public boolean remove(String vaultBlock, String attributeName,
 			byte[] sharedKey) throws SecurityVaultException {
 		try {
@@ -331,7 +315,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	 * @see org.jboss.security.vault.SecurityVault#retrieve(java.lang.String,
 	 * java.lang.String, byte[])
 	 */
-	@Override
 	public char[] retrieve(String vaultBlock, String attributeName,
 			byte[] sharedKey) throws SecurityVaultException {
 		// make sure map key is valid
@@ -389,7 +372,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	 * 
 	 * @param sharedKey is ignored for this implementation
 	 */
-	@Override
 	public void store(String vaultBlock, String attributeName,
 			char[] attributeValue, byte[] sharedKey)
 			throws SecurityVaultException {
@@ -437,7 +419,7 @@ public class FIPSCompliantVault implements SecurityVault {
 		vaultContent.addVaultData(vaultBlock, attributeName, rawBuffer.array());
 
 		try {
-			writeVaultData();
+			fileUtil.writeVaultData(vaultContent);
 		} catch (IOException e) {
 			String msg = "unable to write the vault data";
 			LOGGER.error(msg);
@@ -463,87 +445,5 @@ public class FIPSCompliantVault implements SecurityVault {
 			throws SecurityVaultException {
 		LOGGER.error(msg, t);
 		throw new SecurityVaultException(msg, t);
-	}
-
-	/**
-	 * quietly close the stream
-	 * 
-	 * @param stream
-	 */
-	private void quietlyClose(Closeable stream) {
-		try {
-			if (stream != null) {
-				stream.close();
-			}
-		} catch (Exception e) {
-		}
-	}
-
-	/**
-	 * Reads the raw content of the vault file.
-	 * 
-	 * @throws SecurityVaultException
-	 *             if the vault file does not exist or is not readable
-	 */
-	private void readVaultContent() throws SecurityVaultException {
-		try {
-			// set the vault path
-			vaultDir = System.getProperty(NSSDB_PATH_PROPERTY_NAME);
-			if (!vaultDir.endsWith(System.getProperty(File.pathSeparator))) {
-				vaultDir = vaultDir + File.pathSeparator;
-			}
-
-			if (vaultFileExists() == false) {
-				String msg = "the vault file does not exist or is not readable";
-				LOGGER.error(msg);
-				throw new SecurityVaultException(msg);
-			}
-
-			// read the vault content
-			FileInputStream fis = null;
-			ObjectInputStream ois = null;
-			try {
-				fis = new FileInputStream(vaultDir + VAULT_CONTENT_FILE);
-				ois = new ObjectInputStream(fis);
-				vaultContent = (FIPSCompliantVaultData) ois.readObject();
-			} finally {
-				quietlyClose(fis);
-				quietlyClose(ois);
-			}
-		} catch (Exception e) {
-			throw new SecurityVaultException(e);
-		}
-	}
-
-	/**
-	 * @return true if file exists and readable, false otherwise
-	 */
-	private boolean vaultFileExists() {
-		File vaultPath = new File(vaultDir);
-
-		if (vaultPath.exists()) {
-			File file = new File(vaultDir + VAULT_CONTENT_FILE);
-			return file != null && file.exists() && file.canRead();
-		}
-
-		return false;
-	}
-
-	/**
-	 * Write the vault data content to the vault file
-	 * 
-	 * @throws IOException
-	 */
-	private void writeVaultData() throws IOException {
-		FileOutputStream fos = null;
-		ObjectOutputStream oos = null;
-		try {
-			fos = new FileOutputStream(vaultDir + VAULT_CONTENT_FILE);
-			oos = new ObjectOutputStream(fos);
-			oos.writeObject(vaultContent);
-		} finally {
-			quietlyClose(oos);
-			quietlyClose(fos);
-		}
 	}
 }

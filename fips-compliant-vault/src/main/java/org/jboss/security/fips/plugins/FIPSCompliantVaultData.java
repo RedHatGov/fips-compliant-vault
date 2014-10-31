@@ -61,6 +61,17 @@ public class FIPSCompliantVaultData implements Serializable {
 	}
 
 	/**
+	 * 
+	 * @param vaultBlock
+	 * @param attributeName
+	 * @param encryptedData
+	 */
+	public void addVaultData(String vaultBlock, String attributeName,
+			byte[] encryptedData) {
+		vaultData.put(dataKey(vaultBlock, attributeName), encryptedData);
+	}
+
+	/**
 	 * Writes object to the ObjectOutputSteream.
 	 * 
 	 * @param oos
@@ -92,17 +103,6 @@ public class FIPSCompliantVaultData implements Serializable {
 	 */
 	byte[] getVaultData(String vaultBlock, String attributeName) {
 		return vaultData.get(dataKey(vaultBlock, attributeName));
-	}
-
-	/**
-	 * 
-	 * @param vaultBlock
-	 * @param attributeName
-	 * @param encryptedData
-	 */
-	void addVaultData(String vaultBlock, String attributeName,
-			byte[] encryptedData) {
-		vaultData.put(dataKey(vaultBlock, attributeName), encryptedData);
 	}
 
 	/**
