@@ -40,12 +40,11 @@ import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.DESKeySpec;
 
 import org.jboss.logging.Logger;
-import org.jboss.security.Base64Utils;
 import org.jboss.security.fips.utils.FIPSCryptoUtil;
 import org.jboss.security.fips.utils.FIPSVaultFileUtil;
+import org.jboss.security.fips.utils.FIPSVaultOptions;
 import org.jboss.security.vault.SecurityVault;
 import org.jboss.security.vault.SecurityVaultException;
 import org.mozilla.jss.CryptoManager;
@@ -90,17 +89,8 @@ public class FIPSCompliantVault implements SecurityVault {
 	public static final int AES_KEY_LEN = 128;
 	public static final String VAULT_CRYPTO_FULL_ALG = "AES/CBC/PKCS5Padding";
 
-	// vault-option names and parsing constants
-	public static final String IV = "IV";
-	public static final String SALT = "SALT";
-	public static final String MASKED_TOKEN_PIN = "TOKEN_PIN";
-	public static final String MASKED_TOKEN_PREFIX = "MASK-";
-
 	// property for directory containing the Mozilla NSS database files
 	public static final String NSSDB_PATH_PROPERTY_NAME = "fips.vault.path";
-
-	// NIST Special Publication 800-132 recommendations for PBKDF2 algorithm
-	public static final int PBE_SALT_MIN_LEN = 128 / 8;
 
 	/*
 	 * Static initializer to enable the Mozilla-JSS JCA provider and load the
@@ -145,6 +135,9 @@ public class FIPSCompliantVault implements SecurityVault {
 	// utility to read/write vault file
 	private FIPSVaultFileUtil fileUtil = new FIPSVaultFileUtil();
 
+	// utility to process vault-options
+	private FIPSVaultOptions optionsUtil = new FIPSVaultOptions();
+
 	/**
 	 * @see org.jboss.security.vault.SecurityVault#exists(String, String)
 	 */
@@ -159,66 +152,30 @@ public class FIPSCompliantVault implements SecurityVault {
 	public byte[] handshake(Map<String, Object> handshakeOptions)
 			throws SecurityVaultException {
 		// doesn't do anything meaningful in this implementation
-		return new byte[PBE_SALT_MIN_LEN];
+		return new byte[FIPSVaultOptions.PBE_SALT_MIN_LEN];
 	}
 
 	/*
 	 * @see org.jboss.security.vault.SecurityVault#init(java.util.Map)
 	 */
 	public void init(Map<String, Object> options) throws SecurityVaultException {
-		if (options == null || options.isEmpty())
-			logErrorAndThrowSVE("required options missing or empty");
-
-		String maskedTokenPin = (String) options.get(MASKED_TOKEN_PIN);
-		if (maskedTokenPin == null)
-			logErrorAndThrowSVE("missing required option " + MASKED_TOKEN_PIN);
-
-		if (maskedTokenPin.startsWith(MASKED_TOKEN_PREFIX) == false)
-			logErrorAndThrowSVE("invalid masked token pin '" + maskedTokenPin
-					+ "'");
-
-		String saltOptVal = (String) options.get(SALT);
-		if (saltOptVal == null)
-			logErrorAndThrowSVE("missing required option " + SALT);
-
-		byte[] salt = null;
 		try {
-			salt = Base64Utils.fromb64(saltOptVal);
-		} catch (NumberFormatException nfe) {
-			logErrorAndThrowSVE(
-					"salt is not a valid base-64 encoded byte array", nfe);
+			optionsUtil.validateAllOptions(options);
+		} catch (IllegalArgumentException iae) {
+			logErrorAndThrowSVE("options not valid", iae);
 		}
-
-		if (salt.length < PBE_SALT_MIN_LEN)
-			logErrorAndThrowSVE("salt must be at least " + PBE_SALT_MIN_LEN
-					+ " bytes in length");
-
-		String ivOptVal = (String) options.get(IV);
-		if (ivOptVal == null)
-			logErrorAndThrowSVE("missing required option " + IV);
-
-		byte[] iv = null;
-		try {
-			iv = Base64Utils.fromb64(ivOptVal);
-		} catch (NumberFormatException nfe) {
-			logErrorAndThrowSVE(
-					"initialization vector is not a valid base-64 encoded byte array",
-					nfe);
-		}
-
-		if (iv.length != DESKeySpec.DES_KEY_LEN)
-			logErrorAndThrowSVE("initialization vector must be "
-					+ DESKeySpec.DES_KEY_LEN + " bytes in length");
 
 		Password tokenPin = null;
 		SecretKey maskKey = null;
 		try {
 			// derive the key to unmask the token PIN
-			maskKey = FIPSCryptoUtil.nonFipsDeriveMaskKey(salt);
+			maskKey = FIPSCryptoUtil
+					.nonFipsDeriveMaskKey(optionsUtil.getSalt());
 
 			// log into the cryptographic token
-			tokenPin = FIPSCryptoUtil.unmaskTokenPin(maskedTokenPin, maskKey,
-					iv, sunJCEProvider);
+			tokenPin = FIPSCryptoUtil.unmaskTokenPin(
+					optionsUtil.getMaskedTokenPin(), maskKey,
+					optionsUtil.getIv(), sunJCEProvider);
 			fipsToken = CryptoManager.getInstance()
 					.getInternalKeyStorageToken();
 			fipsToken.login(tokenPin);
@@ -236,9 +193,11 @@ public class FIPSCompliantVault implements SecurityVault {
 		 * unmasking the token pin using FIPS compliant cryptography only
 		 */
 		try {
-			maskKey = FIPSCryptoUtil.fipsDeriveMaskKey(fipsToken, salt);
+			maskKey = FIPSCryptoUtil.fipsDeriveMaskKey(fipsToken,
+					optionsUtil.getSalt());
 			Password fipsTokenPin = FIPSCryptoUtil.unmaskTokenPin(
-					maskedTokenPin, maskKey, iv, fipsProvider);
+					optionsUtil.getMaskedTokenPin(), maskKey,
+					optionsUtil.getIv(), fipsProvider);
 
 			// logout so we can then login using the fips unmasked token pin
 			fipsToken.logout();
@@ -376,15 +335,12 @@ public class FIPSCompliantVault implements SecurityVault {
 			char[] attributeValue, byte[] sharedKey)
 			throws SecurityVaultException {
 		if (vaultBlock == null || vaultBlock.isEmpty()) {
-			String msg = "vault block '" + vaultBlock + "' is not valid";
-			LOGGER.error(msg);
-			throw new SecurityVaultException(msg);
+			logErrorAndThrowSVE("vault block '" + vaultBlock + "' is not valid");
 		}
 
 		if (attributeName == null || attributeName.isEmpty()) {
-			String msg = "attribute name '" + attributeName + "' is not valid";
-			LOGGER.error(msg);
-			throw new SecurityVaultException(msg);
+			logErrorAndThrowSVE("attribute name '" + attributeName
+					+ "' is not valid");
 		}
 
 		// generate a random initialization vector
@@ -401,9 +357,7 @@ public class FIPSCompliantVault implements SecurityVault {
 					VAULT_CRYPTO_FULL_ALG, adminKey, iv, plaintext,
 					fipsProvider);
 		} catch (Exception e) {
-			String msg = "unable to encrypt vault entry";
-			LOGGER.error(msg);
-			throw new SecurityVaultException(msg);
+			logErrorAndThrowSVE("unable to encrypt vault entry", e);
 		}
 
 		Password.wipeChars(attributeValue);
@@ -421,9 +375,7 @@ public class FIPSCompliantVault implements SecurityVault {
 		try {
 			fileUtil.writeVaultData(vaultContent);
 		} catch (IOException e) {
-			String msg = "unable to write the vault data";
-			LOGGER.error(msg);
-			throw new SecurityVaultException(msg);
+			logErrorAndThrowSVE("unable to write the vault data", e);
 		}
 	}
 
