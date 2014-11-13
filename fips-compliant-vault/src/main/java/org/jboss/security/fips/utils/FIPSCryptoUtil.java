@@ -21,6 +21,7 @@
  */
 package org.jboss.security.fips.utils;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -40,13 +41,14 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 
 import org.jboss.logging.Logger;
-import org.jboss.security.Base64Utils;
 import org.mozilla.jss.crypto.CryptoStore;
 import org.mozilla.jss.crypto.CryptoToken;
+import org.mozilla.jss.crypto.EncryptionAlgorithm;
 import org.mozilla.jss.crypto.PrivateKey;
 import org.mozilla.jss.crypto.SecretKeyFacade;
 import org.mozilla.jss.crypto.SymmetricKey;
 import org.mozilla.jss.util.Password;
+import org.mozilla.jss.util.PasswordCallback.GiveUpException;
 
 /**
  * Utility functions for FIPS compliant vault cryptography.
@@ -55,25 +57,26 @@ import org.mozilla.jss.util.Password;
  * @since Oct 10, 2014
  */
 public class FIPSCryptoUtil {
-
 	private static final Logger LOGGER = Logger.getLogger(FIPSCryptoUtil.class);
 
 	public static final String ADMIN_KEY_TYPE = "AES";
 	private static final int ADMIN_KEY_LENGTH = 128;
 	private static final String ADMIN_KEY_WRAP_ALG = "RSA";
 
+	// password masking constants
+	public static final int AES_KEY_LEN = 128;
+	public static final String VAULT_CRYPTO_FULL_ALG = "AES/CBC/PKCS5Padding";
 
 	// token pin mask parameters
 	private static final String MASK_ALG_CRYPTO = "DESede";
 	private static final String MASK_ALG_FULL = MASK_ALG_CRYPTO
 			+ "/CBC/PKCS5Padding";
-
-	// vault-option names and parsing constants
-	private static final String MASKED_TOKEN_PREFIX = "MASK-";
+	private static final int MASK_KEY_STRENGTH = 192;
 
 	// NIST Special Publication 800-132 recommendations for PBKDF2 algorithm
 	private static final String PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
 	private static final int PBE_MIN_ITERATION_COUNT = 1000;
+	public static final int PBE_SALT_MIN_LEN = 128 / 8;
 
 	// fixed string to seed PBE, see http://xkcd.com/221/
 	private static final String PBE_SEED = "areallylongthrowawaystringthatdoesnotmatter";
@@ -83,7 +86,7 @@ public class FIPSCryptoUtil {
 
 	// provider names
 	public static final String FIPS_PROVIDER_NAME = "Mozilla-JSS";
-	private static final String NONFIPS_PROVIDER_NAME = "SunJCE";
+	public static final String NONFIPS_PROVIDER_NAME = "SunJCE";
 
 	/*
 	 * Static initializer to load the small native library to expose the Mozilla
@@ -99,10 +102,66 @@ public class FIPSCryptoUtil {
 		}
 	}
 
+	/*
+	 * Static initializer to kluge around a mismatch in the JSS and NSS
+	 * implementations. In NSS, the file <pre>
+	 * 
+	 * @code nss/lib/softoken/pkcs11c.c
+	 * 
+	 * </pre> contains the function: <pre>
+	 * 
+	 * @code unsigned long sftk_MapKeySize(CK_KEY_TYPE keyType);
+	 * 
+	 * </pre> which requires that a key type of CKK_DES3 has a 24 byte (192 bit)
+	 * key strength. This conflicts with a key validation check in JSS. The JSS
+	 * file <pre>
+	 * 
+	 * @code jss/security/jss/org/mozilla/jss/crypto/EncryptionAlgorithm.java
+	 * 
+	 * <pre> instantiates several objects of itself that are added to an
+	 * internal static list to define the valid list of algorithms including
+	 * algorithm name, mode, padding, and key strength. For 3DES, only key
+	 * strengths of 168 bits (21 bytes) are added to this list. For
+	 * "DESede/CBC/PKCS5Padding", the actual values are: <pre>
+	 * 
+	 * @code public static final EncryptionAlgorithm DES3_CBC_PAD = new
+	 * EncryptionAlgorithm(CKM_DES3_CBC_PAD, Alg.DESede, Mode.CBC,
+	 * Padding.PKCS5, IVParameterSpecClasses, 8, null, 168); //no oid
+	 * 
+	 * </pre> If the key strength validation succeeds in NSS then it will fail
+	 * in JSS and vice versa. As a work around to this, reflection is used to
+	 * instantiate another instance of EncryptionAlgorithm that is added to the
+	 * internal validation list to match the NSS 192 bit key strength for 3DES.
+	 */
+	public static class KludgeEncryptionAlgorithm extends EncryptionAlgorithm {
+		KludgeEncryptionAlgorithm(Class<?>[] ivParamSpecs) {
+			super(CKM_DES3_CBC_PAD, Alg.DESede, Mode.CBC, Padding.PKCS5,
+					ivParamSpecs, 8 /* blockSize */, null /* no oid */, 192 /* keyStrength */);
+		}
+	}
+
+	public static final EncryptionAlgorithm DES3_CBC_PAD_192;
+	static {
+		try {
+			// get the static protected IVParameterSpecClasses array
+			Field field = EncryptionAlgorithm.class
+					.getDeclaredField("IVParameterSpecClasses");
+			field.setAccessible(true);
+
+			DES3_CBC_PAD_192 = new KludgeEncryptionAlgorithm(
+					(Class[]) field.get(null)); // IVParameterSpecClasses
+		} catch (Throwable t) {
+			// Fatal since we won't be able to use 3DES FIPS compliant
+			// encryption
+			throw new RuntimeException(
+					"Unable to use 3DES FIPS compliant encryption", t);
+		}
+	}
+
 	/**
 	 * Encrypt/decrypt given data.
 	 * 
-	 * @param mode
+	 * @param modeNON_FIPS_PROVIDER_NAME
 	 *            can be either Cipher.ENCRYPT_MODE or Cipher.DECRYPT_MODE
 	 * @param algorithm
 	 *            specifies the key type, cryptographic mode, and padding
@@ -125,6 +184,7 @@ public class FIPSCryptoUtil {
 
 	/**
 	 * Generates an admin key used to mask vault items.
+	 * 
 	 * @return generated admin key
 	 * @throws NoSuchAlgorithmException
 	 */
@@ -164,7 +224,7 @@ public class FIPSCryptoUtil {
 		SecretKeyFactory factory = SecretKeyFactory.getInstance(PBE_ALGORITHM,
 				sunJCEProvider);
 		PBEKeySpec pbeSpec = new PBEKeySpec(passphrase, salt,
-				PBE_MIN_ITERATION_COUNT, DESedeKeySpec.DES_EDE_KEY_LEN * 8);
+				PBE_MIN_ITERATION_COUNT, MASK_KEY_STRENGTH);
 		SecretKey pbeKey = factory.generateSecret(pbeSpec);
 
 		// convert the generated key to 3DES since that will be used to mask the
@@ -194,8 +254,7 @@ public class FIPSCryptoUtil {
 		// Derive the key that will be used to mask the password. The same key
 		// will be generated as long as the parameters are the same
 		SymmetricKey symKey = deriveKeyFromPassword(fipsToken, passphrase,
-				salt, PBE_MIN_ITERATION_COUNT,
-				DESedeKeySpec.DES_EDE_KEY_LEN * 8);
+				salt, PBE_MIN_ITERATION_COUNT, MASK_KEY_STRENGTH);
 		return new SecretKeyFacade(symKey);
 	}
 
@@ -262,7 +321,7 @@ public class FIPSCryptoUtil {
 	/**
 	 * Mask the NSS token password using the Mozilla JSS provider.
 	 */
-	public static String maskTokenPin(Password tokenPin, SecretKey maskKey,
+	public static byte[] maskTokenPin(Password tokenPin, SecretKey maskKey,
 			byte[] tokenPinIv) throws Exception {
 		Provider fipsProvider = Security.getProvider(FIPS_PROVIDER_NAME);
 
@@ -279,7 +338,7 @@ public class FIPSCryptoUtil {
 		Password.wipeBytes(plaintext);
 		tokenPin.clear();
 
-		return MASKED_TOKEN_PREFIX + Base64Utils.tob64(ciphertext);
+		return ciphertext;
 	}
 
 	/**
@@ -292,16 +351,12 @@ public class FIPSCryptoUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Password unmaskTokenPin(String maskedTokenPin,
+	public static Password unmaskTokenPin(byte[] maskedTokenPin,
 			SecretKey maskKey, byte[] tokenPinIv, Provider provider)
 			throws Exception {
-		// get the encrypted token pin
-		maskedTokenPin = maskedTokenPin.substring(MASKED_TOKEN_PREFIX.length());
-		byte[] ciphertext = Base64Utils.fromb64(maskedTokenPin);
-
 		// decrypt the token pin using the derived secret key
 		byte[] plaintext = doCrypto(Cipher.DECRYPT_MODE, MASK_ALG_FULL,
-				maskKey, tokenPinIv, ciphertext, provider);
+				maskKey, tokenPinIv, maskedTokenPin, provider);
 
 		// convert byte array to char array
 		Charset cs = Charset.forName("UTF-8");
@@ -315,6 +370,36 @@ public class FIPSCryptoUtil {
 		Password.wipeChars(password);
 
 		return tokenPin;
+	}
+
+	/**
+	 * Reads sensitive strings securely without using immutable strings.
+	 * 
+	 * @return the sensitive string. Please clear the returned value after use.
+	 */
+	public static Password readSensitiveString(String prompt) {
+		Password first = null;
+		Password second = null;
+
+		try {
+			do {
+				System.out.print("\nPlease enter the " + prompt + ": ");
+				first = Password.readPasswordFromConsole();
+
+				System.out.print("Please confirm the " + prompt + ": ");
+				second = Password.readPasswordFromConsole();
+			} while (!first.equals(second));
+		} catch (GiveUpException e) {
+			System.err.println("No " + prompt + " supplied");
+
+			if (first != null)
+				first.clear();
+		}
+
+		if (second != null)
+			second.clear();
+
+		return first;
 	}
 
 	/**
