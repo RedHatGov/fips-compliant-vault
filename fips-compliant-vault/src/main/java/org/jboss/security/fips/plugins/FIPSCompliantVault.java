@@ -85,10 +85,6 @@ public class FIPSCompliantVault implements SecurityVault {
 	public static final String ADMIN_KEY_VAULTBLOCK = "admin";
 	public static final String ADMIN_KEY_ATTRIBUTE = "key";
 
-	// password masking constants
-	public static final int AES_KEY_LEN = 128;
-	public static final String VAULT_CRYPTO_FULL_ALG = "AES/CBC/PKCS5Padding";
-
 	// property for directory containing the Mozilla NSS database files
 	public static final String NSSDB_PATH_PROPERTY_NAME = "fips.vault.path";
 
@@ -103,7 +99,6 @@ public class FIPSCompliantVault implements SecurityVault {
 
 		try {
 			CryptoManager.initialize(nssdbPath);
-			System.loadLibrary("nss_pbkdf2");
 		} catch (Throwable t) {
 			LOGGER.fatal("Unable to initialize the Mozilla JCA provider.  "
 					+ "Please verify that the system property '"
@@ -119,8 +114,8 @@ public class FIPSCompliantVault implements SecurityVault {
 	private SecretKey adminKey = null;
 
 	// get JCA providers by name regardless of the preferred JVM order
-	private Provider fipsProvider = Security.getProvider("Mozilla-JSS");
-	private Provider sunJCEProvider = Security.getProvider("SunJCE");
+	private Provider fipsProvider = Security.getProvider(FIPSCryptoUtil.FIPS_PROVIDER_NAME);
+	private Provider nonFipsProvider = Security.getProvider(FIPSCryptoUtil.NONFIPS_PROVIDER_NAME);
 
 	// the cryptographic token
 	private CryptoToken fipsToken;
@@ -152,7 +147,7 @@ public class FIPSCompliantVault implements SecurityVault {
 	public byte[] handshake(Map<String, Object> handshakeOptions)
 			throws SecurityVaultException {
 		// doesn't do anything meaningful in this implementation
-		return new byte[FIPSVaultOptions.PBE_SALT_MIN_LEN];
+		return new byte[FIPSCryptoUtil.PBE_SALT_MIN_LEN];
 	}
 
 	/*
@@ -160,7 +155,7 @@ public class FIPSCompliantVault implements SecurityVault {
 	 */
 	public void init(Map<String, Object> options) throws SecurityVaultException {
 		try {
-			optionsUtil.validateAllOptions(options);
+			optionsUtil.validateVaultOptions(options);
 		} catch (IllegalArgumentException iae) {
 			logErrorAndThrowSVE("options not valid", iae);
 		}
@@ -175,13 +170,13 @@ public class FIPSCompliantVault implements SecurityVault {
 			// log into the cryptographic token
 			tokenPin = FIPSCryptoUtil.unmaskTokenPin(
 					optionsUtil.getMaskedTokenPin(), maskKey,
-					optionsUtil.getIv(), sunJCEProvider);
+					optionsUtil.getIv(), nonFipsProvider);
 			fipsToken = CryptoManager.getInstance()
 					.getInternalKeyStorageToken();
 			fipsToken.login(tokenPin);
 
 			// at this point, FIPS-compliant cryptography ONLY!
-			sunJCEProvider = null;
+			nonFipsProvider = null;
 		} catch (Exception e) {
 			logErrorAndThrowSVE("failed to log into cryptographic token", e);
 		}
@@ -269,7 +264,7 @@ public class FIPSCompliantVault implements SecurityVault {
 		}
 		return true;
 	}
-
+	
 	/*
 	 * @see org.jboss.security.vault.SecurityVault#retrieve(java.lang.String,
 	 * java.lang.String, byte[])
@@ -292,7 +287,7 @@ public class FIPSCompliantVault implements SecurityVault {
 			ByteBuffer rawBuffer = ByteBuffer.wrap(rawBytes);
 
 			// extract the initialization vector
-			byte[] iv = new byte[AES_KEY_LEN];
+			byte[] iv = new byte[FIPSCryptoUtil.AES_KEY_LEN];
 			rawBuffer.get(iv);
 
 			// extract the cipher text
@@ -303,7 +298,7 @@ public class FIPSCompliantVault implements SecurityVault {
 			byte[] plaintext = null;
 			try {
 				plaintext = FIPSCryptoUtil.doCrypto(Cipher.DECRYPT_MODE,
-						VAULT_CRYPTO_FULL_ALG, adminKey, iv, ciphertext,
+						FIPSCryptoUtil.VAULT_CRYPTO_FULL_ALG, adminKey, iv, ciphertext,
 						fipsProvider);
 			} catch (Exception e) {
 				logErrorAndThrowSVE("unable to decrypt vault value for '"
@@ -344,7 +339,7 @@ public class FIPSCompliantVault implements SecurityVault {
 		}
 
 		// generate a random initialization vector
-		byte[] iv = new byte[AES_KEY_LEN];
+		byte[] iv = new byte[FIPSCryptoUtil.AES_KEY_LEN];
 		random.nextBytes(iv);
 
 		// encrypt the given attribute value using the admin key
@@ -354,7 +349,7 @@ public class FIPSCompliantVault implements SecurityVault {
 		byte[] ciphertext = new byte[0];
 		try {
 			ciphertext = FIPSCryptoUtil.doCrypto(Cipher.ENCRYPT_MODE,
-					VAULT_CRYPTO_FULL_ALG, adminKey, iv, plaintext,
+					FIPSCryptoUtil.VAULT_CRYPTO_FULL_ALG, adminKey, iv, plaintext,
 					fipsProvider);
 		} catch (Exception e) {
 			logErrorAndThrowSVE("unable to encrypt vault entry", e);

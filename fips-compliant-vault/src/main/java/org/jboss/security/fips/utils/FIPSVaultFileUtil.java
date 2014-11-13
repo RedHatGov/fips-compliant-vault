@@ -60,7 +60,7 @@ public class FIPSVaultFileUtil {
 		String vaultDir = System
 				.getProperty(FIPSCompliantVault.NSSDB_PATH_PROPERTY_NAME);
 
-		if (!vaultDir.endsWith(System.getProperty(File.pathSeparator))) {
+		if (!vaultDir.endsWith(File.pathSeparator)) {
 			vaultDir = vaultDir + File.pathSeparator;
 		}
 
