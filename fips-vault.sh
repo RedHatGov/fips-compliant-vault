@@ -20,11 +20,12 @@ function read_answer {
 }
 
 echo
-echo "Please enter the full path to the NSS database directory.  If this"
+echo "Please enter the full path to the directory that will hold the Mozilla"
+echo "Netscape Security Services (NSS) database and vault files.  If this"
 echo "directory does not exist, you will be asked to allow the script to"
 echo "create it."
 echo
-echo -n "Enter the full path: "
+echo -n "Enter the full path to the vault directory: "
 read DBDIR
 
 BOOL_ISNEWDB=false
@@ -121,8 +122,7 @@ then
         -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=US" -d ${DBDIR} || abort
 
     echo
-    echo "The vault store has been successfully initialized and individual masked"
-    echo "passwords can now be added."
+    echo "The NSS database for the vault store has been successfully initialized."
     echo
 
     PROG_ARGS="--new-vault"

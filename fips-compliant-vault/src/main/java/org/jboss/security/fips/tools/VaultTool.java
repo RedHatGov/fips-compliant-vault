@@ -85,10 +85,10 @@ public class VaultTool {
 				running = false;
 			}
 		}
-		
+
 		if (in != null)
 			in.close();
-		
+
 		System.exit(0);
 	}
 
@@ -165,19 +165,7 @@ public class VaultTool {
 			fileUtil.writeVaultData(vaultContent);
 
 			// print the vault-option elements
-			System.out
-					.println("NOTE:  Make sure that the configuration file for your"
-							+ " application server includes the following elements:\n");
-
-			System.out.println("\t<vault code='"
-					+ FIPSCompliantVault.class.getName() + "' >");
-			System.out.println("\t\t<vault-options>");
-			for (String name : vaultOptions.keySet()) {
-				System.out.println("\t\t\t<vault-option name='" + name
-						+ "' value='" + vaultOptions.get(name) + "' />");
-			}
-			System.out.println("\t\t</vault-options>");
-			System.out.println("\t</vault>\n");
+			vaultConfigurationDisplay();
 		}
 
 		// initialize the password vault
@@ -197,5 +185,41 @@ public class VaultTool {
 	 */
 	void stopInteraction() {
 		interaction = null;
+	}
+
+	/**
+	 * Display info about vault itself in form of EAP configuration file.
+	 */
+	public void vaultConfigurationDisplay() {
+		System.out.println("\n********************************************");
+		System.out.println("NOTE:  Make sure that the EAP configuration "
+				+ "file includes the following elements:");
+		System.out.println("********************************************");
+		System.out.println("...");
+		System.out.println("</extensions>");
+		System.out.println(vaultConfiguration());
+		System.out.println("<management>");
+		System.out.println("...");
+		System.out.println("********************************************\n");
+	}
+
+	/**
+	 * @return vault configuration string in user readable form.
+	 */
+	public String vaultConfiguration() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(
+				"<vault code=\"" + FIPSCompliantVault.class.getName() + "\" >")
+				.append("\n");
+
+		Map<String, Object> vaultOptions = options.getVaultOptionMap();
+		for (String key : vaultOptions.keySet()) {
+			sb.append(
+					"  <vault-option name=\"" + key + "\" value=\""
+							+ vaultOptions.get(key) + "\"/>").append("\n");
+		}
+
+		sb.append("</vault>");
+		return sb.toString();
 	}
 }

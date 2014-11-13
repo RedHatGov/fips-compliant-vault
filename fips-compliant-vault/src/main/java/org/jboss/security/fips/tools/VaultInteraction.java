@@ -20,7 +20,8 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /*
- * This class is derived from org.jboss.as.security.vault.VaultInteraction.java.  The header from that class is above.
+ * This class is derived from org.jboss.as.security.vault.VaultInteraction.java.
+ * The header from that class is above.
  */
 package org.jboss.security.fips.tools;
 
@@ -34,8 +35,11 @@ import org.mozilla.jss.util.Password;
  * Interaction with initialized {@link SecurityVault} via the {@link VaultTool}
  *
  * @author Anil Saldhana
+ * @author Rich Lucente
  */
 public class VaultInteraction {
+	private static final long FAKE_SHARED_KEY = 0x464950532d313430L;
+
 	private SecurityVault vault = null;
 	private byte[] sharedKey = new byte[1];
 
@@ -65,6 +69,7 @@ public class VaultInteraction {
 				try {
 					vault.store(vaultBlock, attributeName,
 							attributeValue.getChars(), sharedKey);
+					attributeCreatedDisplay(vaultBlock, attributeName);
 				} catch (Exception e) {
 					System.out.println("Exception occurred:"
 							+ e.getLocalizedMessage());
@@ -84,7 +89,7 @@ public class VaultInteraction {
 					char[] value = vault.retrieve(vaultBlock, attributeName,
 							sharedKey);
 					if (value == null || value.length == 0)
-						System.out.println("No value has been store for ("
+						System.out.println("No value has been stored for ("
 								+ vaultBlock + ", " + attributeName + ")");
 					else {
 						Password.wipeChars(value);
@@ -104,13 +109,32 @@ public class VaultInteraction {
 	}
 
 	/**
+	 * Display info about stored secured attribute.
+	 *
+	 * @param vaultBlock
+	 * @param attributeName
+	 */
+	private void attributeCreatedDisplay(String vaultBlock, String attributeName) {
+		System.out
+				.println("\nSecured attribute value has been stored in vault. ");
+		System.out.println("Please make note of the following:");
+		System.out.println("********************************************");
+		System.out.println("Vault Block:" + vaultBlock);
+		System.out.println("Attribute Name:" + attributeName);
+		System.out.println("Configuration should be done as follows:");
+		System.out.println(securedAttributeConfigurationString(vaultBlock,
+				attributeName));
+		System.out.println("********************************************\n");
+	}
+
+	/**
 	 * Reads a value from the input stream using the given prompt
 	 * 
 	 * @param in
 	 *            the input scanner
 	 * @return the value read from the console
 	 */
-	String readValue(Scanner in, String prompt) {
+	private String readValue(Scanner in, String prompt) {
 		String value = null;
 
 		while (value == null || value.length() == 0) {
@@ -119,5 +143,17 @@ public class VaultInteraction {
 		}
 
 		return value;
+	}
+
+	/**
+	 * Returns configuration string for secured attribute.
+	 *
+	 * @param vaultBlock
+	 * @param attributeName
+	 * @return
+	 */
+	private String securedAttributeConfigurationString(String vaultBlock,
+			String attributeName) {
+		return "VAULT::" + vaultBlock + "::" + attributeName + "::" + FAKE_SHARED_KEY;
 	}
 }
