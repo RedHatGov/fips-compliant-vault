@@ -112,6 +112,24 @@ pushd `dirname $0` 2>&1 > /dev/null
             cp -fr mozilla mozilla.orig
         fi
 
+        # patch the PK11SymKey.c file to support the PBKDF2 implementation
+        # in NSS.  This is a small kludge as CKM_PKCS5_PBKD2 doesn't
+        # always map to DES3_KEYTYPE_FIELD, but it fits this particular
+        # use case.
+
+        patch -p0 <<END1
+--- mozilla.orig/jss/security/jss/org/mozilla/jss/pkcs11/PK11SymKey.c	2014-11-13 00:26:58.220144079 -0500
++++ mozilla/jss/security/jss/org/mozilla/jss/pkcs11/PK11SymKey.c	2014-11-13 00:29:10.367186474 -0500
+@@ -256,6 +256,7 @@
+         typeFieldName = RC2_KEYTYPE_FIELD;
+         break;
+       case CKM_PBE_SHA1_DES3_EDE_CBC:
++      case CKM_PKCS5_PBKD2:
+         typeFieldName = DES3_KEYTYPE_FIELD;
+         break;
+       case CKM_PBA_SHA1_WITH_SHA1_HMAC:
+END1
+
         # expose a few other local functions for use by the PBKDF2
         # implementation in the small native library since JSS does
         # not expose the PBKDF2 functionality that's already in NSS
@@ -171,5 +189,5 @@ pushd `dirname $0` 2>&1 > /dev/null
     mkdir -p dist/bin
 
     cp -r ${TARGETDIR}/modules dist
-    cp init-vault.sh dist/bin 
+    cp fips-vault.sh dist/bin 
 popd
