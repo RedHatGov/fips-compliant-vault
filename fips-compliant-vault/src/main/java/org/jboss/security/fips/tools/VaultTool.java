@@ -209,7 +209,8 @@ public class VaultTool {
 	public String vaultConfiguration() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(
-				"<vault code=\"" + FIPSCompliantVault.class.getName() + "\" >")
+				"<vault code=\"" + FIPSCompliantVault.class.getName()
+						+ "\" module=\"org.jboss.security.fips.plugins\" >")
 				.append("\n");
 
 		Map<String, Object> vaultOptions = options.getVaultOptionMap();
