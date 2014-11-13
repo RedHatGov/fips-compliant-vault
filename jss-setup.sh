@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # This script creates a FIPS compliant security vault implementation
-# packaged as a JBoss EAP 6.x module.  The artifact is in the target/modules
-# directory.  The module contains two native libraries, a jar file for
-# the vault implementation and the  signed Mozilla Java Security Services
-# (JSS) jar.
+# packaged as a JBoss EAP 6.x module.  Pre-built artifacts are in the
+# dist directory.  The module contains a script to initialize and insert
+# entries into the vault, two native libraries, a jar file for the vault
+# implementation and the  signed Mozilla Java Security Services (JSS) jar.
 #
 # The specific files in the module are:
-# 
+#
+#  fips-vault.sh    - script to initialize and populate vault 
 #  jss4.jar         - the signed Mozilla JSS library
 #  libjss4.so       - JNI method implementation needed by jss4.jar
 #  libnss_pbkdf2.so - exposes the Mozilla Network Security Services (NSS)
@@ -25,8 +26,9 @@
 #     solely for the purpose of building the native shared libraries for the
 #     vault implementation.
 #
-# Any needed dependencies will be downloaded automatically.  This behavior
-# can be bypassed by copying needed dependencies to the target directory.
+# Any needed dependencies will be downloaded automatically.  If you lack
+# network connectivity, this behavior can be bypassed by copying needed
+# dependencies to the target directory.
 #
 # The version of mercurial available for RHEL 6 is not compatible with the
 # Mozilla source trees.  To work around this, a local build of a newer version
@@ -112,7 +114,7 @@ pushd `dirname $0` 2>&1 > /dev/null
             cp -fr mozilla mozilla.orig
         fi
 
-        # patch the PK11SymKey.c file to support the PBKDF2 implementation
+        # Patch the PK11SymKey.c file to support the PBKDF2 implementation
         # in NSS.  This is a small kludge as CKM_PKCS5_PBKD2 doesn't
         # always map to DES3_KEYTYPE_FIELD, but it fits this particular
         # use case.
@@ -130,12 +132,26 @@ pushd `dirname $0` 2>&1 > /dev/null
        case CKM_PBA_SHA1_WITH_SHA1_HMAC:
 END1
 
-        # expose a few other local functions for use by the PBKDF2
-        # implementation in the small native library since JSS does
-        # not expose the PBKDF2 functionality that's already in NSS
+        # Patch the jss.def file to expose a few other local functions
+        # in the libjss4.so shared library.  These will be used by the
+        # small custom native library to expose the PBKDF2 functionality
+        # that's already in NSS.
 
-        FUNC_NAME="Java_org_mozilla_jss_pkcs11_PK11KeyPairGenerator_generateDSAKeyPairWithOpFlags;"
-	sed -i "s/${FUNC_NAME}/${FUNC_NAME}\nJSS_ByteArrayToSECItem;\nJSS_PK11_getTokenSlotPtr;\nJSS_PK11_wrapSymKey;\nJSS_throwMsg;/g" mozilla/jss/security/jss/lib/jss.def
+        patch -p0 <<END2
+--- mozilla.orig/jss/security/jss/lib/jss.def	2014-11-13 01:06:45.490880483 -0500
++++ mozilla/jss/security/jss/lib/jss.def	2014-11-13 01:19:59.584994455 -0500
+@@ -326,6 +326,10 @@
+ Java_org_mozilla_jss_pkcs11_PK11KeyPairGenerator_generateECKeyPairWithOpFlags;
+ Java_org_mozilla_jss_pkcs11_PK11KeyPairGenerator_generateRSAKeyPairWithOpFlags;
+ Java_org_mozilla_jss_pkcs11_PK11KeyPairGenerator_generateDSAKeyPairWithOpFlags;
++JSS_ByteArrayToSECItem;
++JSS_PK11_getTokenSlotPtr;
++JSS_PK11_wrapSymKey;
++JSS_throwMsg;
+ ;+    local:
+ ;+       *;
+ ;+};
+END2
 
         # build nss and nspr to support jss build only
         cd ${TARGETDIR}/mozilla/nss
