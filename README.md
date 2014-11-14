@@ -69,6 +69,46 @@ property named:
 
 so that JBoss can properly initialize the Mozilla NSS native library.
 
+Mixing Vault with the SunPKCS11 SSL
+-----------------------------------
+
+The only restriction is that the same NSS database must be used for both
+the SunPKCS11 provider certificates and the security vault.  To add a
+self-signed certificate, simply use:
+
+    certutil -S -k rsa -n jbossweb -t "u,u,u" -x -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=MY" -d <vault-directory>
+
+Next, create the configuration file named 'nss_pkcs11_fips.cfg' for the
+SunPKCS11 provider:
+
+    name = nss-fips
+    nssLibraryDirectory=/usr/lib64
+    nssSecmodDirectory=<vault-directory>
+    nssModule = fips
+
+As root, edit the file
+'/usr/lib/jvm/java-1.7.0-openjdk.x86_64/jre/lib/security/java.security'
+to enable the SunPKCS11 provider:
+
+    #
+    # List of providers and their preference orders (see above):
+    #
+    security.provider.1=sun.security.pkcs11.SunPKCS11 <path-to-nss-configuration-file>
+    security.provider.2=sun.security.provider.Sun
+
+Make sure to renumber the other providers.  Also, the <vault-directory>
+must be the full path to the vault directory which is read/writable by
+the user that is running jboss.
+
+Finally, in the EAP configuration file, make sure that you enable the
+ssl connector:
+
+    <connector name="https" protocol="HTTP/1.1" scheme="https" socket-binding="https" secure="false">
+        <ssl name="https" key-alias="jbossweb" password="${VAULT::pkcs11::token_pin::5064667574125540400}" 
+            cipher-suite="SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_anon_WITH_AES_128_CBC_SHA,TLS_ECDH_anon_WITH_AES_256_CBC_SHA"
+            keystore-type="PKCS11"/>
+    </connector>
+
 Caveat
 ------
 
