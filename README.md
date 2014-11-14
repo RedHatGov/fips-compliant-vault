@@ -78,13 +78,16 @@ self-signed certificate, simply use:
 
     certutil -S -k rsa -n jbossweb -t "u,u,u" -x -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=MY" -d <vault-directory>
 
-Next, create the configuration file named 'nss_pkcs11_fips.cfg' for the
-SunPKCS11 provider:
+Next, create the NSS PKCS11 configuration file named 'nss_pkcs11_fips.cfg'
+for the SunPKCS11 provider:
 
     name = nss-fips
     nssLibraryDirectory=/usr/lib64
     nssSecmodDirectory=<vault-directory>
     nssModule = fips
+
+The <vault-directory> must be the full path to the vault directory which
+is also read/writable by the user that is running jboss.
 
 As root, edit the file
 '/usr/lib/jvm/java-1.7.0-openjdk.x86_64/jre/lib/security/java.security'
@@ -93,12 +96,10 @@ to enable the SunPKCS11 provider:
     #
     # List of providers and their preference orders (see above):
     #
-    security.provider.1=sun.security.pkcs11.SunPKCS11 <path-to-nss-configuration-file>
+    security.provider.1=sun.security.pkcs11.SunPKCS11 <path-to-nss-pkcs11-config-file>
     security.provider.2=sun.security.provider.Sun
 
-Make sure to renumber the other providers.  Also, the <vault-directory>
-must be the full path to the vault directory which is read/writable by
-the user that is running jboss.
+Make sure to renumber the other providers.
 
 Finally, in the EAP configuration file, make sure that you enable the
 ssl connector:
@@ -108,6 +109,11 @@ ssl connector:
             cipher-suite="SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_anon_WITH_AES_128_CBC_SHA,TLS_ECDH_anon_WITH_AES_256_CBC_SHA"
             keystore-type="PKCS11"/>
     </connector>
+
+The vaultcert must be first in the list of private keys.  You can confirm
+this using the command:
+
+    certutil -K -d fips-vault
 
 Caveat
 ------
