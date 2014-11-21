@@ -139,7 +139,7 @@ with the following entry in the server.log file:
 Caveat
 ------
 
-This is very early days and testing continues.  The functionality appears
-to work with only small changes remaining such as substitution strings
-for vaulted values.  At this point, I have only tried this on a fully
-patched RHEL 6.6 guest vm.  Pull requests are welcome!
+This is very early days and testing continues, but the vault is working
+and correctly masking/unmasking sensitive strings.  At this point, I
+have only tried this on a fully patched RHEL 6.6 guest vm.  Pull requests
+are welcome!
