@@ -74,7 +74,7 @@ Mixing Vault with the SunPKCS11 SSL
 
 The only restriction is that the same NSS database must be used for both
 the SunPKCS11 provider certificates and the security vault.  To add a
-self-signed certificate, simply use:
+self-signed certificate for the SunPKCS11 provider, simply use:
 
     certutil -S -k rsa -n jbossweb -t "u,u,u" -x -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=MY" -d <vault-directory>
 
@@ -87,7 +87,7 @@ for the SunPKCS11 provider:
     nssModule = fips
 
 The <vault-directory> must be the full path to the vault directory which
-is also read/writable by the user that is running jboss.
+is also read/writable and owned by the user that is running jboss.
 
 As root, edit the file
 '/usr/lib/jvm/java-1.7.0-openjdk.x86_64/jre/lib/security/java.security'
@@ -110,10 +110,31 @@ ssl connector:
             keystore-type="PKCS11"/>
     </connector>
 
-The vaultcert must be first in the list of private keys.  You can confirm
-this using the command:
+It's very important to make sure that the public/private key pair
+associated with the alias 'vaultcert' that's used by the vault must
+be the first entry, particularly in the list of private keys.  You can
+confirm this using the command:
 
     certutil -K -d fips-vault
+
+The first private key should be associated with the 'vaultcert' alias.
+Example output is below:
+
+    < 0> rsa      952e3db343533efac1b9515893d1522bd85f07cc   NSS FIPS 140-2 Certificate DB:vaultcert
+    < 1> rsa      69214e1d58478fa5546c5e856c7ced3b41e55b65   NSS FIPS 140-2 Certificate DB:jbossweb
+
+Running EAP with FIPS compliant vault
+-------------------------------------
+
+I tested EAP by using the following command line while in the $JBOSS_HOME
+directory:
+
+    bin/standalone.sh -c standalone-full.xml -Dfips.vault.path=/home/rlucente/fips-test/fips-vault
+
+If all the configs are in agreement, you will see EAP start up cleanly
+with the following entry in the server.log file:
+
+    14:54:56,904 INFO  [org.jboss.security.fips.plugins.FIPSCompliantVault] (Controller Boot Thread) FIPS compliant password vault successfully initialized
 
 Caveat
 ------
