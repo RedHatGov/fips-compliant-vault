@@ -85,7 +85,6 @@ then
     echo
     echo "Creating the NSS database files for the vault ..."
     modutil -force -create -dbdir ${DBDIR} || abort
-    echo $?
     chmod a+r ${DBDIR}/*.db
 
     echo
