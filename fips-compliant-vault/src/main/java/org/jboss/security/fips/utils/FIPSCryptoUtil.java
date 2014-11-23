@@ -278,7 +278,8 @@ public class FIPSCryptoUtil {
 				// get the public key to wrap the admin key
 				CryptoStore store = fipsToken.getCryptoStore();
 				int vaultIdx = findVaultCertIndex(store);
-				PublicKey pub = store.getCertificates()[vaultIdx].getPublicKey();
+				PublicKey pub = store.getCertificates()[vaultIdx]
+						.getPublicKey();
 
 				// wrap the admin key using the cert priv key
 				Cipher cipher = Cipher.getInstance(ADMIN_KEY_WRAP_ALG,
@@ -390,6 +391,10 @@ public class FIPSCryptoUtil {
 
 		try {
 			do {
+				if (first != null)
+					System.out
+							.println("The values do not match.  Please try again.");
+
 				System.out.print("\nPlease enter the " + prompt + ": ");
 				first = Password.readPasswordFromConsole();
 
@@ -411,22 +416,25 @@ public class FIPSCryptoUtil {
 
 	/**
 	 * Find the index for the vault certificate
+	 * 
 	 * @param store
 	 * @return
 	 * @throws TokenException
 	 */
-	private static int findVaultCertIndex(CryptoStore store) throws TokenException {
+	private static int findVaultCertIndex(CryptoStore store)
+			throws TokenException {
 		int i = 0;
-		
+
 		for (X509Certificate cert : store.getCertificates()) {
 			if (cert.getNickname().trim().contains(VAULTCERT_NICKNAME))
 				return i;
 			++i;
 		}
-		
-		throw new TokenException("Certificate with nickname '" + VAULTCERT_NICKNAME +"' is missing");
+
+		throw new TokenException("Certificate with nickname '"
+				+ VAULTCERT_NICKNAME + "' is missing");
 	}
-	
+
 	/**
 	 * Native method that exposes the Mozilla NSS implementation of PKCS#5
 	 * PBKDF2 password-based encryption
