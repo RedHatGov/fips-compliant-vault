@@ -47,6 +47,8 @@ import org.mozilla.jss.crypto.EncryptionAlgorithm;
 import org.mozilla.jss.crypto.PrivateKey;
 import org.mozilla.jss.crypto.SecretKeyFacade;
 import org.mozilla.jss.crypto.SymmetricKey;
+import org.mozilla.jss.crypto.TokenException;
+import org.mozilla.jss.crypto.X509Certificate;
 import org.mozilla.jss.util.Password;
 import org.mozilla.jss.util.PasswordCallback.GiveUpException;
 
@@ -87,6 +89,9 @@ public class FIPSCryptoUtil {
 	// provider names
 	public static final String FIPS_PROVIDER_NAME = "Mozilla-JSS";
 	public static final String NONFIPS_PROVIDER_NAME = "SunJCE";
+
+	// nickname for the vault pub/priv key pair
+	private static final String VAULTCERT_NICKNAME = "vaultcert";
 
 	/*
 	 * Static initializer to load the small native library to expose the Mozilla
@@ -270,11 +275,12 @@ public class FIPSCryptoUtil {
 
 		if (adminKey != null) {
 			try {
-				// get the private key to unwrap the admin key
+				// get the public key to wrap the admin key
 				CryptoStore store = fipsToken.getCryptoStore();
-				PublicKey pub = store.getCertificates()[0].getPublicKey();
+				int vaultIdx = findVaultCertIndex(store);
+				PublicKey pub = store.getCertificates()[vaultIdx].getPublicKey();
 
-				// unwrap the admin key using the cert priv key
+				// wrap the admin key using the cert priv key
 				Cipher cipher = Cipher.getInstance(ADMIN_KEY_WRAP_ALG,
 						fipsProvider);
 				cipher.init(Cipher.WRAP_MODE, pub);
@@ -302,6 +308,7 @@ public class FIPSCryptoUtil {
 			try {
 				// get the private key to unwrap the admin key
 				CryptoStore store = fipsToken.getCryptoStore();
+				findVaultCertIndex(store);
 				PrivateKey priv = store.getPrivateKeys()[0];
 
 				// unwrap the admin key using the cert priv key
@@ -402,6 +409,24 @@ public class FIPSCryptoUtil {
 		return first;
 	}
 
+	/**
+	 * Find the index for the vault certificate
+	 * @param store
+	 * @return
+	 * @throws TokenException
+	 */
+	private static int findVaultCertIndex(CryptoStore store) throws TokenException {
+		int i = 0;
+		
+		for (X509Certificate cert : store.getCertificates()) {
+			if (cert.getNickname().trim().contains(VAULTCERT_NICKNAME))
+				return i;
+			++i;
+		}
+		
+		throw new TokenException("Certificate with nickname '" + VAULTCERT_NICKNAME +"' is missing");
+	}
+	
 	/**
 	 * Native method that exposes the Mozilla NSS implementation of PKCS#5
 	 * PBKDF2 password-based encryption
