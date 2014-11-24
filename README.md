@@ -110,19 +110,6 @@ ssl connector:
             keystore-type="PKCS11"/>
     </connector>
 
-It's very important to make sure that the public/private key pair
-associated with the alias 'vaultcert' that's used by the vault must
-be the first entry, particularly in the list of private keys.  You can
-confirm this using the command:
-
-    certutil -K -d fips-vault
-
-The first private key should be associated with the 'vaultcert' alias.
-Example output is below:
-
-    < 0> rsa      952e3db343533efac1b9515893d1522bd85f07cc   NSS FIPS 140-2 Certificate DB:vaultcert
-    < 1> rsa      69214e1d58478fa5546c5e856c7ced3b41e55b65   NSS FIPS 140-2 Certificate DB:jbossweb
-
 Running EAP with FIPS compliant vault
 -------------------------------------
 

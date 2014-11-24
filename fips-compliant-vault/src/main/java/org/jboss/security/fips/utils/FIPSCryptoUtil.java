@@ -281,11 +281,8 @@ public class FIPSCryptoUtil {
 				PublicKey pub = store.getCertificates()[vaultIdx]
 						.getPublicKey();
 
-				// wrap the admin key using the cert priv key
-				Cipher cipher = Cipher.getInstance(ADMIN_KEY_WRAP_ALG,
-						fipsProvider);
-				cipher.init(Cipher.WRAP_MODE, pub);
-				wrappedKey = cipher.wrap(adminKey);
+				// wrap the key using the cert public key
+				wrappedKey = doWrapKey(pub, fipsProvider, adminKey);
 			} catch (Exception e) {
 				LOGGER.error("failed to wrap the key", e);
 			}
@@ -309,15 +306,11 @@ public class FIPSCryptoUtil {
 			try {
 				// get the private key to unwrap the admin key
 				CryptoStore store = fipsToken.getCryptoStore();
-				findVaultCertIndex(store);
-				PrivateKey priv = store.getPrivateKeys()[0];
+				int privIdx = findVaultPrivKeyIndex(store, fipsProvider);
+				PrivateKey priv = store.getPrivateKeys()[privIdx];
 
 				// unwrap the admin key using the cert priv key
-				Cipher cipher = Cipher.getInstance(ADMIN_KEY_WRAP_ALG,
-						fipsProvider);
-				cipher.init(Cipher.UNWRAP_MODE, priv);
-				unwrappedKey = (SecretKey) cipher.unwrap(wrappedKey,
-						ADMIN_KEY_TYPE, Cipher.SECRET_KEY);
+				unwrappedKey = doUnwrapKey(priv, fipsProvider, wrappedKey);
 			} catch (Exception e) {
 				LOGGER.error("failed to unwrap the key", e);
 			}
@@ -391,9 +384,10 @@ public class FIPSCryptoUtil {
 
 		try {
 			do {
-				if (first != null)
-					System.out
-							.println("The values do not match.  Please try again.");
+				if (first != null) {
+					System.out.println("\nThe values do not match.  "
+							+ "Please try again.");
+				}
 
 				System.out.print("\nPlease enter the " + prompt + ": ");
 				first = Password.readPasswordFromConsole();
@@ -415,6 +409,59 @@ public class FIPSCryptoUtil {
 	}
 
 	/**
+	 * Wrap the secret key given the public key and provider.
+	 * 
+	 * @param pub
+	 *            the public key
+	 * @param provider
+	 *            the provider to wrap the key
+	 * @param secret
+	 *            the key to be wrapped
+	 * @return the wrapped secret key
+	 */
+	private static byte[] doWrapKey(PublicKey pub, Provider provider,
+			SecretKey secret) {
+		byte[] wrappedKey = new byte[0];
+
+		try {
+			// wrap the admin key using the cert priv key
+			Cipher cipher = Cipher.getInstance(ADMIN_KEY_WRAP_ALG, provider);
+			cipher.init(Cipher.WRAP_MODE, pub);
+			wrappedKey = cipher.wrap(secret);
+		} catch (Exception e) {
+			LOGGER.error("failed to wrap the key", e);
+		}
+
+		return wrappedKey;
+	}
+
+	/**
+	 * Unwrap the wrapped key given the private key and provider.
+	 * 
+	 * @param priv
+	 *            the private key
+	 * @param the
+	 *            provider to unwrap the key
+	 * @param wrappedKey
+	 *            the wrapped secret key
+	 * @return the unwrapped secret key
+	 */
+	private static SecretKey doUnwrapKey(PrivateKey priv, Provider provider,
+			byte[] wrappedKey) throws Exception {
+		SecretKey unwrappedKey = null;
+
+		if (wrappedKey != null) {
+			// unwrap the admin key using the cert priv key
+			Cipher cipher = Cipher.getInstance(ADMIN_KEY_WRAP_ALG, provider);
+			cipher.init(Cipher.UNWRAP_MODE, priv);
+			unwrappedKey = (SecretKey) cipher.unwrap(wrappedKey,
+					ADMIN_KEY_TYPE, Cipher.SECRET_KEY);
+		}
+
+		return unwrappedKey;
+	}
+
+	/**
 	 * Find the index for the vault certificate
 	 * 
 	 * @param store
@@ -433,6 +480,46 @@ public class FIPSCryptoUtil {
 
 		throw new TokenException("Certificate with nickname '"
 				+ VAULTCERT_NICKNAME + "' is missing");
+	}
+
+	/**
+	 * Find the matching private key for the vault cert. There is no easy way to
+	 * do this other than wrap a test key and then successively try to unwrap it
+	 * until successful.
+	 * 
+	 * @param store
+	 *            the crypto store containing the vault cert
+	 * @param provider
+	 *            the fips provider
+	 * @return index of the private key for the vault
+	 */
+	private static int findVaultPrivKeyIndex(CryptoStore store,
+			Provider provider) throws TokenException {
+		int certIdx = findVaultCertIndex(store);
+		PublicKey pub = store.getCertificates()[certIdx].getPublicKey();
+
+		SecretKey testKey = null;
+		try {
+			testKey = generateAdminKey();
+		} catch (Exception ignored) {
+		}
+
+		byte[] wrappedTest = doWrapKey(pub, provider, testKey);
+
+		int i = 0;
+		for (PrivateKey priv : store.getPrivateKeys()) {
+			SecretKey unwrappedTest = null;
+			try {
+				unwrappedTest = doUnwrapKey(priv, provider, wrappedTest);
+			} catch (Exception ignored) {
+			}
+
+			if (unwrappedTest != null)
+				return i;
+			++i;
+		}
+		
+		throw new TokenException("Cannot match private key for vault cert");
 	}
 
 	/**
