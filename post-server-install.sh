@@ -1,8 +1,10 @@
 #!/bin/bash
 
+SM_POOL_ID="INSERT YOUR VALID POOL ID HERE"
+
 # register with RHSM for updates and attach sub and channels
 subscription-manager register
-subscription-manager attach --pool="INSERT YOUR VALID POOL ID HERE"
+subscription-manager attach --pool="$SM_POOL_ID"
 subscription-manager repos --disable="*"
 subscription-manager repos --enable=rhel-6-server-rpms
 subscription-manager repos --enable=rhel-6-server-optional-rpms
@@ -19,6 +21,9 @@ yum -y update
 # install the development tools to build the JSS JNI library
 yum -y groupinstall 'Development tools' \
     'Server Platform Development' 'Additional Development'
+
+# install java development tools
+yum -y install java-1.7.0-openjdk-devel java-1.7.0-openjdk maven3
 
 # restart to make sure we're running with latest updates
 reboot
