@@ -73,8 +73,10 @@ Mixing Vault with the SunPKCS11 SSL
 -----------------------------------
 
 The only restriction is that the same NSS database must be used for both
-the SunPKCS11 provider certificates and the security vault.  To add a
-self-signed certificate for the SunPKCS11 provider, simply use:
+the SunPKCS11 provider certificates and the security vault.  The jbossweb
+server SSL certificate can be imported or a self-signed certificate can
+be created.  To add a self-signed certificate for the SunPKCS11 provider,
+simply use:
 
     certutil -S -k rsa -n jbossweb -t "u,u,u" -x -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=MY" -d <vault-directory>
 
@@ -86,8 +88,10 @@ for the SunPKCS11 provider:
     nssSecmodDirectory=<vault-directory>
     nssModule = fips
 
-The <vault-directory> must be the full path to the vault directory which
+The vault-directory must be the full path to the vault directory which
 is also read/writable and owned by the user that is running jboss.
+This file can be in the user's home directory if desired so each user
+id that runs JBoss can have their own NSS configuration.
 
 As root, edit the file
 '/usr/lib/jvm/java-1.7.0-openjdk.x86_64/jre/lib/security/java.security'
@@ -99,7 +103,15 @@ to enable the SunPKCS11 provider:
     security.provider.1=sun.security.pkcs11.SunPKCS11 <path-to-nss-pkcs11-config-file>
     security.provider.2=sun.security.provider.Sun
 
-Make sure to renumber the other providers.
+Make sure to renumber the other providers.  The
+path-to-nss-pkcs11-config-file parameter can use parameters to vary its
+location by user.  For example, this value can be set to:
+
+    ${user.home}/nss-pkcs11-fips.cfg
+
+to enable each individual user running java to have their own NSS
+configuration.  If you do this, take care that this file exists for each
+user on the system.
 
 Finally, in the EAP configuration file, make sure that you enable the
 ssl connector:
