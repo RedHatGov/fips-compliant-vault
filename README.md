@@ -138,7 +138,6 @@ with the following entry in the server.log file:
 Caveat
 ------
 
-This is very early days and testing continues, but the vault is working
-and correctly masking/unmasking sensitive strings.  At this point, I
-have only tried this on a fully patched RHEL 6.6 guest vm.  Pull requests
-are welcome!
+The vault is working and correctly masking/unmasking sensitive strings.
+At this point, I have only tried this on a patched RHEL 6.5 guest vm.
+Pull requests are welcome!
