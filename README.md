@@ -141,3 +141,8 @@ Caveat
 The vault is working and correctly masking/unmasking sensitive strings.
 At this point, I have only tried this on a patched RHEL 6.5 guest vm.
 Pull requests are welcome!
+
+Troubleshooting
+---------------
+
+If you get an internal_ssl_error when trying to connect to the HTTPS port, please follow these [instructions](https://access.redhat.com/solutions/1309153) to exclusively use TLSv1.
