@@ -12,7 +12,7 @@ subscription-manager repos --enable=rhel-6-server-supplementary-rpms
 
 # need maven to build this on RHEL.  this script uses an OpenShift
 # channel but any valid method of installing maven 3.x should work
-subscription-manager repos --enable=rhel-6-server-ose-2.1-node-rpms
+subscription-manager repos --enable=rhel-6-server-ose-2.2-node-rpms
 
 # get all updates
 yum clean all

@@ -27,7 +27,7 @@ following script as root one time on the RHEL installation:
 This script makes sure that RHEL 6 is fully patched with all required
 development packages installed.  One package that's needed is maven
 3 and it's not included in the typical RHEL distribution channels so
-I used an OpenShift Enterprise 2.1 channel instead.  You can also add
+I used an OpenShift Enterprise 2.2 channel instead.  You can also add
 maven 3 by downloading and installing manually.  Just make sure that
 the command:
 
