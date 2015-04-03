@@ -23,7 +23,7 @@ yum -y groupinstall 'Development tools' \
     'Server Platform Development' 'Additional Development'
 
 # install java development tools
-yum -y install java-1.7.0-openjdk-devel java-1.7.0-openjdk maven3
+yum -y install java-1.7.0-openjdk-devel java-1.7.0-openjdk maven3 wget
 
 # restart to make sure we're running with latest updates
 reboot
