@@ -135,11 +135,14 @@ with the following entry in the server.log file:
 
     14:54:56,904 INFO  [org.jboss.security.fips.plugins.FIPSCompliantVault] (Controller Boot Thread) FIPS compliant password vault successfully initialized
 
-Caveat
-------
+Status 2015-04-03
+-----------------
 
 The vault is working and correctly masking/unmasking sensitive strings.
-At this point, I have only tried this on a patched RHEL 6.5 guest vm.
+This has been confirmed to work on fully patched RHEL 6.5 and 6.6 guest
+virtual machines.  The fips-vault.sh script that is used to populate
+entries into the vault could definitely be improved to be more user
+friendly and most importantly ask less often for the vault password.
 Pull requests are welcome!
 
 Troubleshooting
