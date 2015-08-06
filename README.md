@@ -88,7 +88,8 @@ both the SunPKCS11 provider certificates and the security vault.
 If you want each user to have their own NSS database, which can be
 very useful if multiple users are running java on the system, then
 make sure the path to the NSS database is in a location unique to
-that user (e.g. $HOME/nssdb).
+that user (e.g. $HOME/nssdb).  This would be the location that was
+defined when the fips-vault.sh script was run.
 
 CHANGE TO STEP 2:  Create the NSS PKCS11 configuration file named
 'nss_pkcs11_fips.cfg' for the SunPKCS11 provider:
