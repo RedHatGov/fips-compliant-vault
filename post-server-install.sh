@@ -6,7 +6,7 @@ SM_POOL_ID=
 # register with RHSM
 subscription-manager register
 
-# if no SM_POO_ID defined, attempt to find the Red Hat employee
+# if no SM_POOL_ID defined, attempt to find the Red Hat employee
 # "kitchen sink" SKU (of course, this only works for RH employees)
 if [ "x${SM_POOL_ID}" = "x" ]
 then
