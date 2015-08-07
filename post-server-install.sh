@@ -1,9 +1,30 @@
 #!/bin/bash
 
-SM_POOL_ID="INSERT YOUR VALID POOL ID HERE"
+# ** define your subscription manager pool id here **
+SM_POOL_ID=
 
-# register with RHSM for updates and attach sub and channels
+# register with RHSM
 subscription-manager register
+
+# if no SM_POO_ID defined, attempt to find the Red Hat employee
+# "kitchen sink" SKU (of course, this only works for RH employees)
+if [ "x${SM_POOL_ID}" = "x" ]
+then
+  SM_POOL_ID=`subscription-manager list --available | \
+      grep 'Subscription Name:\|Pool ID:\|System Type' | \
+      grep -B2 'Virtual' | \
+      grep -A1 'Employee SKU' | \
+      grep 'Pool ID:' | awk '{print $3}'`
+
+  # exit if none found
+  if [ "x${SM_POOL_ID}" = "x" ]
+  then
+    echo "No subcription manager pool id found.  Exiting"
+    exit 1
+  fi
+fi
+
+# attach subscription pool and enable channels for updates
 subscription-manager attach --pool="$SM_POOL_ID"
 subscription-manager repos --disable="*"
 subscription-manager repos --enable=rhel-6-server-rpms
