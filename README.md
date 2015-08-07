@@ -44,8 +44,14 @@ run the following script as an unprivileged user:
     jss-setup.sh
 
 This script does all the necessary native and java builds to enable
-the vault.  The final artifacts are packaged into a module that can be
-deployed to EAP.  See the dist directory when this script finishes.
+the vault.  The final artifacts are packaged into bin and modules
+directories that can be deployed to EAP.  To deploy these artifacts,
+do the following:
+
+    cd dist
+    cp -r dist/* $JBOSS_HOME
+
+where JBOSS_HOME is the top-level JBoss EAP installation directory.
 
 Initialize and Populate the Vault
 ---------------------------------
@@ -53,7 +59,7 @@ Initialize and Populate the Vault
 To create the necessary NSS database files and populate the vault with
 masked strings, please use the script:
 
-    fips-vault.sh
+    $JBOSS_HOME/bin/fips-vault.sh
 
 This will create a directory that contains the needed NSS files and
 the vault itself and then enable the user to add sensitive strings to
@@ -83,16 +89,11 @@ To configure EAP to comply with FIPS 140-2 for SSL/TLS, please
 follow the instructions in section 4.9.4 of the [Security
 Guide](https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html-single/Security_Guide/#sect-FIPS_140-2_Compliant_Encryption).  Important changes to these instructions are noted below.
 
-CHANGE TO STEP 1:  Make sure that the same NSS database is used for
-both the SunPKCS11 provider certificates and the security vault.
-If you want each user to have their own NSS database, which can be
-very useful if multiple users are running java on the system, then
-make sure the path to the NSS database is in a location unique to
-that user (e.g. $HOME/nssdb).  This would be the location that was
-defined when the fips-vault.sh script was run.
+CHANGE TO STEP 1:  The vault directory *is* the NSS database that
+will be used.  You can skip this step.
 
 CHANGE TO STEP 2:  Create the NSS PKCS11 configuration file named
-'nss_pkcs11_fips.cfg' for the SunPKCS11 provider:
+'nss-pkcs11-fips.cfg' for the SunPKCS11 provider:
 
     name = nss-fips
     nssLibraryDirectory=/usr/lib64
@@ -126,13 +127,22 @@ to enable each individual user running java to have their own NSS
 configuration and NSS database.  If you do this, take care that
 this file exists for each user on the system.
 
-The jbossweb server SSL certificate can be imported or a self-signed certificate can be created.  To add a self-signed certificate for the SunPKCS11
-provider, simply use:
+CHANGE TO STEP 4:  Skip this step since the fips-vault.sh script
+already does this.
+
+CHANGE TO STEP 5:  Skip this step since the fips-vault.sh script
+already does this.
+
+CHANGE TO STEP 6:  The jbossweb server SSL certificate can be
+imported or a self-signed certificate can be created.  To add a
+self-signed certificate for the SunPKCS11 provider, simply use:
 
     certutil -S -k rsa -n jbossweb -t "u,u,u" -x -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=MY" -d <vault-directory>
 
-Finally, in the EAP configuration file, make sure that you enable the
-ssl connector:
+CHANGE TO STEP 7:  Finally, in the EAP configuration file, make
+sure that you enable the ssl connector.  You can run the CLI commands
+or simply edit the standalone configuration file to match the
+following:
 
     <connector name="https" protocol="HTTP/1.1" scheme="https" socket-binding="https" secure="true">
         <ssl name="https" key-alias="jbossweb" password="${VAULT::pkcs11::token_pin::5064667574125540400}" 
@@ -153,15 +163,20 @@ with the following entry in the server.log file:
 
     14:54:56,904 INFO  [org.jboss.security.fips.plugins.FIPSCompliantVault] (Controller Boot Thread) FIPS compliant password vault successfully initialized
 
-Status 2015-04-03
+Status 2015-08-06
 -----------------
 
-The vault is working and correctly masking/unmasking sensitive strings.
-This has been confirmed to work on fully patched RHEL 6.5 and 6.6 guest
-virtual machines.  The fips-vault.sh script that is used to populate
-entries into the vault could definitely be improved to be more user
-friendly and most importantly ask less often for the vault password.
-Pull requests are welcome!
+The vault is working and correctly masking/unmasking sensitive
+strings with EAP 6.3.  This has been confirmed to work on fully
+patched RHEL 6.5 through 6.7 guest virtual machines and EAP 6.3.
+
+The software is failing to start on EAP 6.4 and further investigation
+is required as to why.
+
+The fips-vault.sh script that is used to populate entries into the
+vault could definitely be improved to be more user friendly and
+most importantly ask less often for the vault password.  Pull
+requests are welcome!
 
 Troubleshooting
 ---------------
