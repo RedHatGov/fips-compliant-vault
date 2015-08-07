@@ -64,30 +64,8 @@ public class VaultTool {
 		VaultTool tool = new VaultTool(args);
 		tool.init();
 
-		Scanner in = new Scanner(System.in);
-		boolean running = true;
-		while (running) {
-			String commandStr = "Please enter a Digit::   0: Start Interaction "
-					+ " 1: Remove Interaction " + " 2: Exit";
-
-			System.out.println(commandStr);
-			int choice = in.nextInt();
-			switch (choice) {
-			case 0:
-				System.out.println("Starting a vault interaction");
-				tool.startInteraction();
-				break;
-			case 1:
-				System.out.println("Removing the current vault interaction");
-				tool.stopInteraction();
-				break;
-			default:
-				running = false;
-			}
-		}
-
-		if (in != null)
-			in.close();
+		tool.startInteraction();
+		tool.stopInteraction();
 
 		System.exit(0);
 	}
@@ -197,7 +175,9 @@ public class VaultTool {
 		System.out.println("********************************************");
 		System.out.println("...");
 		System.out.println("</extensions>");
+		System.out.println();
 		System.out.println(vaultConfiguration());
+		System.out.println();
 		System.out.println("<management>");
 		System.out.println("...");
 		System.out.println("********************************************\n");
