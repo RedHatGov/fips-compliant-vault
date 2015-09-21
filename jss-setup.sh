@@ -169,7 +169,7 @@ END2
         cd ${TARGETDIR}
         if [ ! -f jss4.jar ]
         then
-            wget ftp://ftp.mozilla.org/pub/mozilla.org/security/jss/releases/${VER_JSS}/jss4.jar
+            wget http://ftp.mozilla.org/pub/mozilla.org/security/jss/releases/${VER_JSS}/jss4.jar
         fi
 
 	# put needed native artifacts in working directory
