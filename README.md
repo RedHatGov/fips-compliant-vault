@@ -163,15 +163,12 @@ with the following entry in the server.log file:
 
     14:54:56,904 INFO  [org.jboss.security.fips.plugins.FIPSCompliantVault] (Controller Boot Thread) FIPS compliant password vault successfully initialized
 
-Status 2015-08-06
+Status 2015-09-21
 -----------------
 
 The vault is working and correctly masking/unmasking sensitive
-strings with EAP 6.3.  This has been confirmed to work on fully
-patched RHEL 6.5 through 6.7 guest virtual machines and EAP 6.3.
-
-The software is failing to start on EAP 6.4 and further investigation
-is required as to why.
+strings with EAP 6.4.  This has been confirmed to work on fully
+patched RHEL 6.5 through 6.7 guest virtual machines and EAP 6.4.
 
 The fips-vault.sh script that is used to populate entries into the
 vault could definitely be improved to be more user friendly and
