@@ -277,9 +277,8 @@ public class FIPSCryptoUtil {
 			try {
 				// get the public key to wrap the admin key
 				CryptoStore store = fipsToken.getCryptoStore();
-				int vaultIdx = findVaultCertIndex(store);
-				PublicKey pub = store.getCertificates()[vaultIdx]
-						.getPublicKey();
+                                X509Certificate cert = findVaultCert(store);
+                                PublicKey pub = cert.getPublicKey();
 
 				// wrap the key using the cert public key
 				wrappedKey = doWrapKey(pub, fipsProvider, adminKey);
@@ -462,20 +461,19 @@ public class FIPSCryptoUtil {
 	}
 
 	/**
-	 * Find the index for the vault certificate
+	 * Find the vault certificate
 	 * 
 	 * @param store
 	 * @return
 	 * @throws TokenException
 	 */
-	private static int findVaultCertIndex(CryptoStore store)
+	private static X509Certificate findVaultCert(CryptoStore store)
 			throws TokenException {
 		int i = 0;
 
 		for (X509Certificate cert : store.getCertificates()) {
-			if (cert.getNickname().trim().contains(VAULTCERT_NICKNAME))
-				return i;
-			++i;
+			if (cert.getNickname().trim().equals(VAULTCERT_NICKNAME))
+				return cert;
 		}
 
 		throw new TokenException("Certificate with nickname '"
@@ -495,8 +493,8 @@ public class FIPSCryptoUtil {
 	 */
 	private static int findVaultPrivKeyIndex(CryptoStore store,
 			Provider provider) throws TokenException {
-		int certIdx = findVaultCertIndex(store);
-		PublicKey pub = store.getCertificates()[certIdx].getPublicKey();
+                X509Certificate cert = findVaultCert(store);
+                PublicKey pub = cert.getPublicKey();
 
 		SecretKey testKey = null;
 		try {
