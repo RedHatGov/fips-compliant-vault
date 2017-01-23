@@ -36,13 +36,13 @@
 #
 # [1] https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/Reference/Building_and_installing_NSS/Build_instructions
 # [2] https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/JSS/Build_instructions_for_JSS_4.3.x
-# [3] http://mercurial.selenic.com/release/mercurial-${VER_HG}.tar.gz
+# [3] https://www.mercurial-scm.org/release/mercurial-${VER_HG}.tar.gz
 
 VER_HG=2.8.1
 VER_JSS=JSS_4_3_2_RTM
 
 # set the target directory
-pushd `dirname $0` 2>&1 > /dev/null
+pushd `dirname $0` &> /dev/null
     export TARGETDIR=`pwd`/target
 
     mkdir -p ${TARGETDIR}
@@ -55,7 +55,8 @@ pushd `dirname $0` 2>&1 > /dev/null
         # will fail with an http 414 error when pulling the mozilla sources
         if [ ! -d mercurial-${VER_HG} ]
         then
-            wget http://mercurial.selenic.com/release/mercurial-${VER_HG}.tar.gz
+            curl -L -O \
+                https://www.mercurial-scm.org/release/mercurial-${VER_HG}.tar.gz
             tar zxf mercurial-${VER_HG}.tar.gz
             cd mercurial-${VER_HG}
             make local
@@ -67,11 +68,23 @@ pushd `dirname $0` 2>&1 > /dev/null
         # determine the version of the yum installed Mozilla NSS and NSPR
         # libraries
         VER_NSS=NSS_`yum list installed nss 2> /dev/null | \
-          grep -i '^nss\.' | sed 's/  */ /g' | cut -d' ' -f2 | \
+          grep -i '^nss\.' | awk '{print $2}' | \
           cut -d'-' -f1 | sed 's/\./_/g'`_RTM
         VER_NSPR=NSPR_`yum list installed nspr 2> /dev/null | \
-          grep -i '^nspr\.' | sed 's/  */ /g' | cut -d' ' -f2 | \
+          grep -i '^nspr\.' | awk '{print $2}' | \
           cut -d'-' -f1 | sed 's/\./_/g'`_RTM
+
+        echo ${VER_NSS} | grep -q '_0_RTM'
+        if [ $? -eq 0 ]
+        then
+          VER_NSS=`echo ${VER_NSS} | sed 's/_0_RTM/_RTM/g'`
+        fi
+
+        echo ${VER_NSPR} | grep -q '_0_RTM'
+        if [ $? -eq 0 ]
+        then
+          VER_NSPR=`echo ${VER_NSPR} | sed 's/_0_RTM/_RTM/g'`
+        fi
 
         echo " nss version ${VER_NSS} installed"
         echo "nspr version ${VER_NSPR} installed"
@@ -81,10 +94,14 @@ pushd `dirname $0` 2>&1 > /dev/null
         # provider.
 
         # set options to build the libraries
-        export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk.x86_64
+        export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk.x86_64
         export BUILD_OPT=1  # comment this out for debug build
         export USE_64=1
         export NSDISTMODE=copy
+
+        # fix missing nullptr keyword in g++ 4.4.x on RHEL 6
+        export NSS_DISABLE_GTESTS=1
+
         #export MOZ_DEBUG_SYMBOLS=1  # uncomment for debug build
 
         # if we already fetched the source, just restore the clean src tree
@@ -169,7 +186,7 @@ END2
         cd ${TARGETDIR}
         if [ ! -f jss4.jar ]
         then
-            wget http://ftp.mozilla.org/pub/mozilla.org/security/jss/releases/${VER_JSS}/jss4.jar
+            curl -L -O http://ftp.mozilla.org/pub/mozilla.org/security/jss/releases/${VER_JSS}/jss4.jar
         fi
 
 	# put needed native artifacts in working directory
