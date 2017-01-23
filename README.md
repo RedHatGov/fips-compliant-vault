@@ -20,16 +20,16 @@ Configure Tools to Build
 ------------------------
 
 This will currently only build on RHEL 6.  To set this up, run the
-following script as root one time on the RHEL installation:
+following script as an unprivileged user one time on the RHEL installation
+(the user should have sudo access for this):
 
     post-server-install.sh
 
 This script makes sure that RHEL 6 is fully patched with all required
-development packages installed.  One package that's needed is maven
-3 and it's not included in the typical RHEL distribution channels so
-I used an OpenShift Enterprise 2.2 channel instead.  You can also add
-maven 3 by downloading and installing manually.  Just make sure that
-the command:
+development packages installed.  One package that's needed is maven 3
+and it's not included in the typical RHEL distribution channels so the
+above script downloads and installs it from the Apache Maven web site.
+Just make sure that the command:
 
     mvn
 
