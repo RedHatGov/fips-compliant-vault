@@ -54,7 +54,7 @@ sudo tar zxf apache-maven-${VER_MAVEN}-bin.tar.gz -C /opt
 grep apache-maven-${VER_MAVEN} ~/.bash_profile &> /dev/null
 if [ $? -eq 1 ]
 then
-  sed -i "s,\(PATH=\),\1/opt/apache-maven-${VER_MAVEN}:,g" ~/.bash_profile
+  sed -i "s,\(PATH=\),\1/opt/apache-maven-${VER_MAVEN}/bin:,g" ~/.bash_profile
 fi
 
 # restart to make sure we're running with latest updates
