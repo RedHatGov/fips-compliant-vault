@@ -82,7 +82,6 @@ following to the bottom of the `$JBOSS_HOME/bin/standalone.conf` file:
     # set the fips vault path
     JAVA_OPTS="$JAVA_OPTS -Dfips.vault.path=$HOME/nssdb"
 
-
 Mixing Vault with the SunPKCS11 SSL
 -----------------------------------
 
