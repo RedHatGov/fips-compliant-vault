@@ -157,6 +157,7 @@ file as long as that file contains the line:
 
 By default, OpenJDK on RHEL meets this criteria so its possible to include
 a java option on the command line to override the security policy file.
+
 After making the above changes to the `$JBOSS_HOME/bin/standalone.conf`
 file, copy the security providers from the default policy file to
 `$HOME/java.security.properties` and add the configuration for the
