@@ -8,7 +8,7 @@ functions needed to mask sensitive strings in the EAP configuration files.
 Red Hat JBoss EAP itself is not FIPS certified, but it's able to use
 those certified native libraries on RHEL.
 
-Pre-built Binaries for RHEL 6.7
+Pre-built Binaries for RHEL 6.8
 -------------------------------
 
 The dist folder included in the source distribution contains all the
@@ -23,17 +23,18 @@ This will currently only build on RHEL 6.  To set this up, run the
 following script as an unprivileged user one time on the RHEL installation
 (the user should have sudo access for this):
 
-    post-server-install.sh
+    ./post-server-install.sh
 
 This script makes sure that RHEL 6 is fully patched with all required
 development packages installed.  One package that's needed is maven 3
 and it's not included in the typical RHEL distribution channels so the
 above script downloads and installs it from the Apache Maven web site.
-Just make sure that the command:
+Maven is also added to the user's executable search path.  Make sure
+that the command: Just make sure that the command:
 
-    mvn
+    mvn -v
 
-is on the executable search path.
+works correctly after running the above script.
 
 Build and Package the Custom Module
 -----------------------------------
@@ -41,7 +42,7 @@ Build and Package the Custom Module
 To build the java and native archives and package them up as a module,
 run the following script as an unprivileged user:
 
-    jss-setup.sh
+    ./jss-setup.sh
 
 This script does all the necessary native and java builds to enable
 the vault.  The final artifacts are packaged into bin and modules
@@ -163,12 +164,12 @@ with the following entry in the server.log file:
 
     14:54:56,904 INFO  [org.jboss.security.fips.plugins.FIPSCompliantVault] (Controller Boot Thread) FIPS compliant password vault successfully initialized
 
-Status 2015-09-21
+Status 2017-01-23
 -----------------
 
 The vault is working and correctly masking/unmasking sensitive
 strings with EAP 6.4.  This has been confirmed to work on fully
-patched RHEL 6.5 through 6.7 guest virtual machines and EAP 6.4.
+patched RHEL 6.8 guest virtual machine and EAP 6.4.
 
 The fips-vault.sh script that is used to populate entries into the
 vault could definitely be improved to be more user friendly and
