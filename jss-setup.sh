@@ -174,6 +174,13 @@ END2
         cd ${TARGETDIR}/mozilla/nss
         gmake nss_build_all
 
+        # make sure dir naming convention matches jss expectations
+        for objdir in `find .. -type d -name 'Linux*'`
+        do
+          tgtdir=`echo $objdir | sed 's/_cc_/_/g'`
+          cp -r $objdir $tgtdir
+        done
+
         # make sure artifacts are where jss expects
         cp -r coreconf/nsinstall ../jss/security/coreconf
         cp -r ../dist ../jss
