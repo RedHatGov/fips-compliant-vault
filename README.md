@@ -109,7 +109,7 @@ This file can be in the user's home directory if desired so each
 user id that runs JBoss can have their own NSS configuration.
 
 CHANGE TO STEP 3:  As root, edit the file
-'/usr/lib/jvm/java-1.7.0-openjdk.x86_64/jre/lib/security/java.security' to
+'/usr/lib/jvm/java-1.8.0-openjdk.x86_64/jre/lib/security/java.security' to
 enable the SunPKCS11 provider:
 
     #
@@ -167,9 +167,9 @@ with the following entry in the server.log file:
 Status 2017-01-23
 -----------------
 
-The vault is working and correctly masking/unmasking sensitive
-strings with EAP 6.4.  This has been confirmed to work on fully
-patched RHEL 6.8 guest virtual machine and EAP 6.4.
+The vault is working and correctly masking/unmasking sensitive strings
+with EAP 6.4.  This has been confirmed to work on fully patched
+RHEL 6.8 guest virtual machine and EAP 6.4 CP12.
 
 The fips-vault.sh script that is used to populate entries into the
 vault could definitely be improved to be more user friendly and
@@ -179,4 +179,6 @@ requests are welcome!
 Troubleshooting
 ---------------
 
-If you get an internal_ssl_error when trying to connect to the HTTPS port, please follow these [instructions](https://access.redhat.com/solutions/1309153) to exclusively use TLSv1.
+If you get an internal_ssl_error when trying to connect to the HTTPS port,
+please follow these [instructions](https://access.redhat.com/solutions/1309153) to exclusively use TLSv1.  Look in the
+comments to that article for EAP 6 instructions.
