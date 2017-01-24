@@ -32,7 +32,7 @@ above script downloads and installs it from the Apache Maven web site.
 Maven is also added to the user's executable search path.  Make sure
 that the command:
 
-    mvn -v
+    mvn -v
 
 works correctly after running the above script.
 
