@@ -30,7 +30,7 @@ development packages installed.  One package that's needed is maven 3
 and it's not included in the typical RHEL distribution channels so the
 above script downloads and installs it from the Apache Maven web site.
 Maven is also added to the user's executable search path.  Make sure
-that the command: Just make sure that the command:
+that the command:
 
     mvn -v
 
