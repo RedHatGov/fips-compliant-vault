@@ -75,6 +75,13 @@ property named:
     fips.vault.path
 
 so that JBoss can properly initialize the Mozilla NSS native library.
+You can add this to the `$JBOSS_HOME/bin/standalone.conf` file so that
+you don't have to specify it on the command line.  Simply append the
+following to the bottom of the `$JBOSS_HOME/bin/standalone.conf` file:
+
+    # set the fips vault path
+    JAVA_OPTS="$JAVA_OPTS -Dfips.vault.path=$HOME/nssdb"
+
 
 Mixing Vault with the SunPKCS11 SSL
 -----------------------------------
@@ -108,9 +115,14 @@ combining the vault with the SunPKCS11 FIPS compliant encryption.
 This file can be in the user's home directory if desired so each
 user id that runs JBoss can have their own NSS configuration.
 
-CHANGE TO STEP 3:  As root, edit the file
-'/usr/lib/jvm/java-1.8.0-openjdk.x86_64/jre/lib/security/java.security' to
-enable the SunPKCS11 provider:
+CHANGE TO STEP 3:  There are two ways to configure the java.security
+policy file and set the security providers.  The first is a system-wide
+change that applies to all users the second is a user-specific change
+so that each java user can have their own policy.
+
+CHANGE TO STEP 3 (Option 1):  As root, edit the file
+'/usr/lib/jvm/java-1.8.0-openjdk.x86_64/jre/lib/security/java.security'
+to enable the SunPKCS11 provider:
 
     #
     # List of providers and their preference orders (see above):
@@ -127,6 +139,45 @@ its location by user.  For example, this value can be set to:
 to enable each individual user running java to have their own NSS
 configuration and NSS database.  If you do this, take care that
 this file exists for each user on the system.
+
+CHANGE TO STEP 3 (Option 2): Alternatively, you can give each java user
+their own security policy and NSS database configuration.  Rather than
+modify the system-wide `$JRE_HOME/lib/security/java.security` policy file,
+you can append the following to the `$JBOSS_HOME/bin/standalone.conf`
+file:
+
+    # override the security providers
+    JAVA_OPTS="$JAVA_OPTS -Djava.security.properties=$HOME/java.security.properties"
+
+According to this [blog
+entry](http://blog.eyallupu.com/2012/11/how-to-overriding-java-security.html),
+each user can have their own overrides to the default security policy
+file as long as that file contains the line:
+
+    security.overridePropertiesFile=true
+
+By default, OpenJDK on RHEL meets this criteria so its possible to include
+a java option on the command line to override the security policy file.
+After making the above changes to the `$JBOSS_HOME/bin/standalone.conf`
+file, copy the security providers from the default policy file to
+`$HOME/java.security.properties` and add the configuration for the
+SunPKCS11 provider as the first security provider and renumber the rest.
+Your `$HOME/java.security.properties` file should resemble this:
+
+    # We can override the values in the JRE_HOME/lib/security/java.security
+    # file here.  If both properties files specify values for the same key, the
+    # value from the command-line properties file is selected, as it is the last
+    # one loaded.  We can reorder and change security providers in this file.
+    security.provider.1=sun.security.pkcs11.SunPKCS11 ${user.home}/nss-pkcs11-fips.cfg
+    security.provider.2=sun.security.provider.Sun
+    security.provider.3=sun.security.rsa.SunRsaSign
+    security.provider.4=sun.security.ec.SunEC
+    security.provider.5=com.sun.net.ssl.internal.ssl.Provider
+    security.provider.6=com.sun.crypto.provider.SunJCE
+    security.provider.7=sun.security.jgss.SunProvider
+    security.provider.8=com.sun.security.sasl.Provider
+    security.provider.9=org.jcp.xml.dsig.internal.dom.XMLDSigRI
+    security.provider.10=sun.security.smartcardio.SunPCSC
 
 CHANGE TO STEP 4:  Skip this step since the fips-vault.sh script
 already does this.
@@ -154,17 +205,17 @@ following:
 Running EAP with FIPS compliant vault
 -------------------------------------
 
-I tested EAP by using the following command line while in the $JBOSS_HOME
-directory:
+I tested EAP by using the following command line, with the configuration
+changes from option 2 of Step 3 above:
 
-    bin/standalone.sh -c standalone-full.xml -Dfips.vault.path=/home/rlucente/fips-test/fips-vault
+    $JBOSS_HOME/bin/standalone.sh -c standalone-full.xml
 
 If all the configs are in agreement, you will see EAP start up cleanly
 with the following entry in the server.log file:
 
     14:54:56,904 INFO  [org.jboss.security.fips.plugins.FIPSCompliantVault] (Controller Boot Thread) FIPS compliant password vault successfully initialized
 
-Status 2017-01-23
+Status 2017-01-24
 -----------------
 
 The vault is working and correctly masking/unmasking sensitive strings
