@@ -46,8 +46,8 @@ public class SecurityVaultData implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/*
-	 * each key maps to an array of byte arrays where the first byte array is
-	 * the initialization vector and the second byte array is the encrypted data
+	 * each key maps to a vault entry that contains an initialization vector and
+	 * the encrypted data
 	 */
 	private transient Map<String, VaultEntry> vaultData = new ConcurrentHashMap<String, VaultEntry>();
 
@@ -146,5 +146,4 @@ public class SecurityVaultData implements Serializable {
 	private static String dataKey(String vaultBlock, String attributeName) {
 		return vaultBlock + StringUtil.PROPERTY_DEFAULT_SEPARATOR + attributeName;
 	}
-
 }
