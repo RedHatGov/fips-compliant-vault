@@ -21,7 +21,7 @@
  */
 package org.jboss.security.vault;
 
-import org.jboss.security.PicketBoxMessages;
+import org.jboss.security.fips.FIPSVaultMessages;
 
 /**
  * A factory to instantiate a {@link SecurityVault}
@@ -64,14 +64,14 @@ public class SecurityVaultFactory
       {
          Class<?> vaultClass = SecurityActions.loadClass(SecurityVaultFactory.class,fqn);
          if(vaultClass == null)
-            throw new SecurityVaultException(PicketBoxMessages.MESSAGES.unableToLoadVaultMessage());
+            throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.unableToLoadVaultMessage());
          try
          {
             vault = (SecurityVault) vaultClass.newInstance();
          }
          catch (Exception e)
          {
-            throw new SecurityVaultException(PicketBoxMessages.MESSAGES.unableToCreateVaultMessage(), e);
+            throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.unableToCreateVaultMessage(), e);
          }
       }
       return vault;
@@ -88,10 +88,10 @@ public class SecurityVaultFactory
    public static SecurityVault get(ClassLoader classLoader, String fqn) throws SecurityVaultException
    {
          if (classLoader == null){
-            throw PicketBoxMessages.MESSAGES.invalidNullArgument("classLoader");
+            throw FIPSVaultMessages.MESSAGES.invalidNullArgument("classLoader");
          }
          if (fqn == null){
-            throw PicketBoxMessages.MESSAGES.invalidNullArgument("fqn");
+            throw FIPSVaultMessages.MESSAGES.invalidNullArgument("fqn");
          }
 	      SecurityManager sm = System.getSecurityManager();
 	      if (sm != null) {
@@ -101,14 +101,14 @@ public class SecurityVaultFactory
 	      {
 	         Class<?> vaultClass = SecurityActions.loadClass(classLoader,fqn);
 	         if(vaultClass == null)
-	            throw new SecurityVaultException(PicketBoxMessages.MESSAGES.unableToLoadVaultMessage());
+	            throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.unableToLoadVaultMessage());
 	         try
 	         {
 	            vault = (SecurityVault) vaultClass.newInstance();
 	         }
 	         catch (Exception e)
 	         {
-	            throw new SecurityVaultException(PicketBoxMessages.MESSAGES.unableToCreateVaultMessage(), e);
+	            throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.unableToCreateVaultMessage(), e);
 	         }
 	      }
 	      return vault;

@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.security.vault;
+package org.jboss.security.fips.tools;
 
 import java.io.Console;
 import java.util.Scanner;
@@ -56,7 +56,7 @@ public class VaultInteraction {
             switch (choice) {
                 case 0:
                     System.out.println("Task: Store a secured attribute");
-                    char[] attributeValue = VaultInteractiveSession.getSensitiveValue("Please enter secured attribute value (such as password)");
+                    char[] attributeValue = VaultInteractiveSession.readSensitiveValue("secured attribute value (e.g. a password)");
                     String vaultBlock = null;
 
                     while (vaultBlock == null || vaultBlock.length() == 0) {

@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.picketbox.util;
+package org.jboss.security.fips.utils;
 
 import java.net.URL;
 import java.security.AccessController;

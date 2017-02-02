@@ -23,7 +23,7 @@ package org.jboss.security.vault;
 
 import java.util.StringTokenizer;
 
-import org.jboss.security.PicketBoxMessages;
+import org.jboss.security.fips.FIPSVaultMessages;
 
 /**
  * Common utility methods associated with the {@link SecurityVault}
@@ -86,12 +86,12 @@ public class SecurityVaultUtil
 			throws SecurityVaultException 
     {
 		if (!isVaultFormat(vaultString))
-            throw PicketBoxMessages.MESSAGES.invalidVaultStringFormat(vaultString);
+            throw FIPSVaultMessages.MESSAGES.invalidVaultStringFormat(vaultString);
 		String[] tokens = tokens(vaultString);
 
 		SecurityVault vault = SecurityVaultFactory.get();
 		if (!vault.isInitialized())
-			throw new SecurityVaultException(PicketBoxMessages.MESSAGES.vaultNotInitializedMessage());
+			throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.vaultNotInitializedMessage());
 		return vault.retrieve(tokens[1], tokens[2], tokens[3].getBytes());
 	}
 
