@@ -1,7 +1,5 @@
 package org.jboss.security.fips;
 
-import java.security.GeneralSecurityException;
-
 import javax.security.auth.login.LoginException;
 import org.jboss.logging.Cause;
 import org.jboss.logging.Message;
