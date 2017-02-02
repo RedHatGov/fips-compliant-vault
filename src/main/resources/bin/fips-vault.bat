@@ -35,6 +35,6 @@ echo.
 echo =========================================================================
 echo.
 
-"%JAVA%" -jar "%JBOSS_HOME%\jboss-modules.jar" -mp "%MODULEPATH%" org.jboss.as.vault-tool %*
+"%JAVA%" -jar "%JBOSS_HOME%\jboss-modules.jar" -mp "%MODULEPATH%" org.jboss.security.fips.vault-tool %*
 
 ENDLOCAL
