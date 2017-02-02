@@ -58,21 +58,6 @@ public final class VaultSession {
 	private String vaultAlias;
 
 	/**
-	 * Constructor to create VaultSession.
-	 *
-	 * @param keystoreURL
-	 * @param keystorePassword
-	 * @param encryptionDirectory
-	 * @param salt
-	 * @param iterationCount
-	 * @throws Exception
-	 */
-	public VaultSession(String keystoreURL, String keystorePassword, String encryptionDirectory, byte[] salt,
-			int iterationCount, byte[] iv) throws Exception {
-		this(keystoreURL, keystorePassword, encryptionDirectory, salt, iterationCount, iv, false);
-	}
-
-	/**
 	 * Constructor to create VaultSession with possibility to create keystore
 	 * automatically.
 	 *
@@ -100,8 +85,8 @@ public final class VaultSession {
 	 * Validate fields sent to this class's constructor.
 	 */
 	private void validate() throws Exception {
-		validateKeystoreURL();
 		validateEncryptionDirectory();
+		validateKeystoreURL();
 		validateSalt();
 		validateIterationCount();
 		validateIv();
@@ -109,10 +94,18 @@ public final class VaultSession {
 	}
 
 	protected void validateKeystoreURL() throws Exception {
-
 		File f = new File(keystoreURL);
 		if (!f.exists()) {
-			throw new Exception("Keystore [" + keystoreURL + "] doesn't exist.");
+			if (createKeystore) {
+				f.getParentFile().mkdirs();
+				if (f.createNewFile()) {
+					f.delete();
+				} else {
+					throw new Exception("Keystore [" + keystoreURL + "] cannot be created.");
+				}
+			} else {
+				throw new Exception("Keystore [" + keystoreURL + "] doesn't exist.");
+			}
 		} else if (!f.canWrite() || !f.isFile()) {
 			throw new Exception("Keystore [" + keystoreURL + "] is not writable or not a file.");
 		}

@@ -39,7 +39,8 @@ public class VaultInteractiveSession {
 	private byte[] salt = null;
 	private int iterationCount = 0;
 	private byte[] iv = null;
-
+	private boolean createKeystore = false;
+	
 	// vault non-interactive session
 	private VaultSession vaultNISession = null;
 
@@ -60,6 +61,13 @@ public class VaultInteractiveSession {
 
 		while (keystoreURL == null || keystoreURL.length() == 0) {
 			keystoreURL = console.readLine("Enter Keystore URL: ");
+		}
+
+		String createKeystoreStr = null;
+		while (createKeystoreStr == null || createKeystoreStr.trim().isEmpty()) {
+			createKeystoreStr = console.readLine("Create the keystore if it doesn't exist <y/N>: ");
+			if (createKeystoreStr.contains("Y") || createKeystoreStr.contains("y"))
+				createKeystore = true;
 		}
 
 		char[] keystorePasswd = readSensitiveValue("keystore password");
@@ -114,7 +122,7 @@ public class VaultInteractiveSession {
 			}
 
 			vaultNISession = new VaultSession(keystoreURL, new String(keystorePasswd), encDir, salt, iterationCount,
-					iv);
+					iv, createKeystore);
 
 			while (keystoreAlias == null || keystoreAlias.length() == 0) {
 				keystoreAlias = console.readLine("Enter Keystore Alias: ");
