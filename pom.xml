@@ -47,6 +47,7 @@
 		<version.commons-cli>1.2.0.redhat-8</version.commons-cli>
 		<version.picketbox>4.1.3.Final-redhat-1</version.picketbox>
 		<version.bc-fips>1.0.0</version.bc-fips>
+		<version.maven-jar-plugin>3.0.2</version.maven-jar-plugin>
 	</properties>
 
 	<dependencies>
@@ -85,4 +86,18 @@
 		</dependency>
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${version.maven-jar-plugin}</version>
+				<configuration>
+					<excludes>
+						<exclude>**/bin/*</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
