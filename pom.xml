@@ -42,17 +42,26 @@
 
 		<!-- JBoss dependency versions -->
 
+		<version.jboss.logging-processor>1.1.0.Final-redhat-1</version.jboss.logging-processor>
 		<version.jboss.logging>3.1.4.GA-redhat-2</version.jboss.logging>
 		<version.jboss.modules>1.3.7.Final-redhat-1</version.jboss.modules>
 		<version.commons-cli>1.2.0.redhat-8</version.commons-cli>
 		<version.picketbox>4.1.3.Final-redhat-1</version.picketbox>
 		<version.bc-fips>1.0.0</version.bc-fips>
+		<version.maven-compiler-plugin>3.6.1</version.maven-compiler-plugin>
 		<version.maven-jar-plugin>3.0.2</version.maven-jar-plugin>
 		<version.maven-assembly-plugin>3.0.0</version.maven-assembly-plugin>
 
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.jboss.logging</groupId>
+			<artifactId>jboss-logging-processor</artifactId>
+			<version>${version.jboss.logging-processor}</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>org.jboss.logging</groupId>
 			<artifactId>jboss-logging</artifactId>
@@ -92,6 +101,12 @@
 			<plugins>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>${version.maven-compiler-plugin}</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>${version.maven-jar-plugin}</version>
 				</plugin>
@@ -107,17 +122,27 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<compilerArgument>
+						-AgeneratedTranslationFilesPath=${project.build.directory}/generated-translation-files
+					</compilerArgument>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
 					<excludes>
 						<exclude>**/assembly/*</exclude>
 						<exclude>**/bin/*</exclude>
 						<exclude>**/bin</exclude>
-                                                <exclude>**/*module.xml</exclude>
+						<exclude>**/*module.xml</exclude>
 					</excludes>
 				</configuration>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
