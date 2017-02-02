@@ -340,22 +340,15 @@ public final class VaultSession {
 	 */
 	public String vaultConfiguration() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("<vault>").append("\n");
-		sb.append("  <vault-option name=\"" + FIPSSecurityVault.KEYSTORE_URL + "\" value=\"" + keystoreURL + "\"/>")
+		sb.append("<vault code=\"" + FIPSSecurityVault.class.getName() + "\" module=\"org.jboss.security.fips\" >")
 				.append("\n");
-		sb.append("  <vault-option name=\"" + FIPSSecurityVault.KEYSTORE_PASSWORD + "\" value=\""
-				+ keystoreMaskedPassword + "\"/>").append("\n");
-		sb.append("  <vault-option name=\"" + FIPSSecurityVault.KEYSTORE_ALIAS + "\" value=\"" + vaultAlias + "\"/>")
-				.append("\n");
-		sb.append("  <vault-option name=\"" + FIPSSecurityVault.SALT + "\" value=\"" + Base64.toBase64String(salt)
-				+ "\"/>").append("\n");
-		sb.append(
-				"  <vault-option name=\"" + FIPSSecurityVault.ITERATION_COUNT + "\" value=\"" + iterationCount + "\"/>")
-				.append("\n");
-		sb.append("  <vault-option name=\"" + FIPSSecurityVault.INITIALIZATION_VECTOR + "\" value=\""
-				+ Base64.toBase64String(iv) + "\"/>").append("\n");
-		sb.append("  <vault-option name=\"" + FIPSSecurityVault.ENC_FILE_DIR + "\" value=\"" + encryptionDirectory
-				+ "\"/>").append("\n");
+
+		createKeystore = false;
+		Map<String, Object> vaultOptions = getVaultOptionsMap();
+		for (String key : vaultOptions.keySet()) {
+			sb.append("  <vault-option name=\"" + key + "\" value=\"" + vaultOptions.get(key) + "\"/>").append("\n");
+		}
+
 		sb.append("</vault>");
 		return sb.toString();
 	}
