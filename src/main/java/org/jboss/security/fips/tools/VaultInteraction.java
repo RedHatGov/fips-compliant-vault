@@ -30,6 +30,7 @@ import org.jboss.security.vault.SecurityVault;
  * Interaction with initialized {@link SecurityVault} via the {@link VaultTool}
  *
  * @author Anil Saldhana
+ * @author Rich Lucente <rlucente_at_redhat_dot_com>
  */
 public class VaultInteraction {
 
@@ -60,18 +61,18 @@ public class VaultInteraction {
                     String vaultBlock = null;
 
                     while (vaultBlock == null || vaultBlock.length() == 0) {
-                        vaultBlock = console.readLine("Enter Vault Block:");
+                        vaultBlock = console.readLine("Enter Vault Block: ");
                     }
 
                     String attributeName = null;
 
                     while (attributeName == null || attributeName.length() == 0) {
-                        attributeName = console.readLine("Enter Attribute Name:");
+                        attributeName = console.readLine("Enter Attribute Name: ");
                     }
                     try {
                         vaultNISession.addSecuredAttributeWithDisplay(vaultBlock, attributeName, attributeValue);
                     } catch (Exception e) {
-                        System.out.println("Problem occurred:" + e.getLocalizedMessage());
+                        System.out.println("Problem occurred: " + e.getLocalizedMessage());
                     }
                     break;
                 case 1:
@@ -80,20 +81,20 @@ public class VaultInteraction {
                         vaultBlock = null;
 
                         while (vaultBlock == null || vaultBlock.length() == 0) {
-                            vaultBlock = console.readLine("Enter Vault Block:");
+                            vaultBlock = console.readLine("Enter Vault Block: ");
                         }
 
                         attributeName = null;
 
                         while (attributeName == null || attributeName.length() == 0) {
-                            attributeName = console.readLine("Enter Attribute Name:");
+                            attributeName = console.readLine("Enter Attribute Name: ");
                         }
                         if (!vaultNISession.checkSecuredAttribute(vaultBlock, attributeName))
                             System.out.println("No value has been store for (" + vaultBlock + ", " + attributeName + ")");
                         else
                             System.out.println("A value exists for (" + vaultBlock + ", " + attributeName + ")");
                     } catch (Exception e) {
-                        System.out.println("Problem occurred:" + e.getLocalizedMessage());
+                        System.out.println("Problem occurred: " + e.getLocalizedMessage());
                     }
                     break;
                 case 2:
@@ -102,13 +103,13 @@ public class VaultInteraction {
                         vaultBlock = null;
 
                         while (vaultBlock == null || vaultBlock.length() == 0) {
-                            vaultBlock = console.readLine("Enter Vault Block:");
+                            vaultBlock = console.readLine("Enter Vault Block: ");
                         }
 
                         attributeName = null;
 
                         while (attributeName == null || attributeName.length() == 0) {
-                            attributeName = console.readLine("Enter Attribute Name:");
+                            attributeName = console.readLine("Enter Attribute Name: ");
                         }
                         if (!vaultNISession.removeSecuredAttribute(vaultBlock, attributeName)) {
                             System.out.println("Secured attribute " + VaultSession.blockAttributeDisplayFormat(vaultBlock, attributeName) + " was not removed from vault, check whether it exist");
@@ -116,7 +117,7 @@ public class VaultInteraction {
                             System.out.println("Secured attribute " + VaultSession.blockAttributeDisplayFormat(vaultBlock, attributeName) + " has been successfuly removed from vault");
                         }
                     } catch (Exception e) {
-                        System.out.println("Problem occurred:" + e.getLocalizedMessage());
+                        System.out.println("Problem occurred: " + e.getLocalizedMessage());
                     }
                     break;
                 default:

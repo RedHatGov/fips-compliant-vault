@@ -31,6 +31,7 @@ import org.jboss.security.fips.utils.CryptoUtil;
  * An interactive session for {@link VaultTool}
  *
  * @author Anil Saldhana
+ * @author Rich Lucente <rlucente_at_redhat_dot_com>
  */
 public class VaultInteractiveSession {
 
@@ -54,11 +55,11 @@ public class VaultInteractiveSession {
 		}
 
 		while (encDir == null || encDir.length() == 0) {
-			encDir = console.readLine("Enter directory to store encrypted files:");
+			encDir = console.readLine("Enter directory to store encrypted files: ");
 		}
 
 		while (keystoreURL == null || keystoreURL.length() == 0) {
-			keystoreURL = console.readLine("Enter Keystore URL:");
+			keystoreURL = console.readLine("Enter Keystore URL: ");
 		}
 
 		char[] keystorePasswd = readSensitiveValue("keystore password");
@@ -67,10 +68,14 @@ public class VaultInteractiveSession {
 			while (salt == null) {
 				System.out.println("\nThe salt must be at least " + CryptoUtil.PBE_SALT_MIN_LEN
 						+ " bytes in length, before base-64 encoding.");
-				String saltStr = console.readLine("Enter salt as a base-64 encoded string:");
+				String saltStr = console.readLine("Enter salt as a base-64 string (or ENTER for a random value): ");
 
 				try {
-					salt = Base64.decode(saltStr);
+					if (saltStr.trim().isEmpty()) {
+						salt = CryptoUtil.genRandomBytes(CryptoUtil.PBE_SALT_MIN_LEN);
+					} else {
+						salt = Base64.decode(saltStr);
+					}
 				} catch (Throwable t) {
 					System.out.println("The salt is not a valid base-64 encoded string.");
 					salt = null;
@@ -83,23 +88,27 @@ public class VaultInteractiveSession {
 			}
 
 			System.out.println("\nThe iteration count must be at least " + CryptoUtil.PBE_MIN_ITERATION_COUNT);
-			String ic = console.readLine("Enter iteration count as a number (Eg: 2000):");
+			String ic = console.readLine("Enter iteration count as a number (Eg: 2000): ");
 			iterationCount = Integer.parseInt(ic);
 
 			while (iv == null) {
 				System.out.println("\nThe initialization vector must be " + CryptoUtil.MASK_KEY_STRENGTH / 8
 						+ " bytes in length, before base-64 encoding.");
-				String ivStr = console.readLine("Enter iv as a base-64 encoded string:");
+				String ivStr = console.readLine("Enter iv as a base-64 string (or ENTER for a random value): ");
 
 				try {
-					iv = Base64.decode(ivStr);
+					if (ivStr.trim().isEmpty()) {
+						iv = CryptoUtil.genRandomBytes(CryptoUtil.MASK_KEY_STRENGTH / 8);
+					} else {
+						iv = Base64.decode(ivStr);
+					}
 				} catch (Throwable t) {
 					System.out.println("The iv is not a valid base-64 encoded string.");
 					iv = null;
 				}
 
-				if (salt.length != CryptoUtil.MASK_KEY_STRENGTH / 8) {
-					System.out.println("The iv is not " + CryptoUtil.PBE_SALT_MIN_LEN + " bytes in length.");
+				if (iv.length != CryptoUtil.MASK_KEY_STRENGTH / 8) {
+					System.out.println("The iv is not " + CryptoUtil.MASK_KEY_STRENGTH / 8 + " bytes in length.");
 					iv = null;
 				}
 			}
@@ -108,7 +117,7 @@ public class VaultInteractiveSession {
 					iv);
 
 			while (keystoreAlias == null || keystoreAlias.length() == 0) {
-				keystoreAlias = console.readLine("Enter Keystore Alias:");
+				keystoreAlias = console.readLine("Enter Keystore Alias: ");
 			}
 
 			System.out.println("Initializing Vault");
@@ -120,7 +129,7 @@ public class VaultInteractiveSession {
 			VaultInteraction vaultInteraction = new VaultInteraction(vaultNISession);
 			vaultInteraction.start();
 		} catch (Exception e) {
-			System.out.println("Exception encountered:" + e.getLocalizedMessage());
+			System.out.println("Exception encountered: " + e.getLocalizedMessage());
 		}
 	}
 
