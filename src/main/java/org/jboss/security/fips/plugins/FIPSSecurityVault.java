@@ -111,7 +111,7 @@ public class FIPSSecurityVault implements SecurityVault {
 
 	private SecretKey adminKey;
 
-	private String decodedEncFileDir;
+	private String vaultDataPath;
 
 	private boolean createKeyStore = false;
 
@@ -134,8 +134,8 @@ public class FIPSSecurityVault implements SecurityVault {
 
 	public static final String CREATE_KEYSTORE = "CREATE_KEYSTORE";
 
-	protected static final String VAULT_CONTENT_FILE = "VAULT.dat"; // vault
-																	// data file
+	// file holding all of the vault entries
+	protected static final String VAULT_CONTENT_FILE = "vault.dat";
 
 	/*
 	 * @see org.jboss.security.vault.SecurityVault#init(java.util.Map)
@@ -200,8 +200,7 @@ public class FIPSSecurityVault implements SecurityVault {
 		String encFileDir = (String) options.get(ENC_FILE_DIR);
 		if (encFileDir == null)
 			throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.invalidNullOrEmptyOptionMessage(ENC_FILE_DIR));
-		if (!(encFileDir.endsWith("/") || encFileDir.endsWith("\\")))
-			throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.invalidDirectoryFormatMessage(encFileDir));
+		vaultDataPath = determineVaultDataPath(encFileDir);
 
 		createKeyStore = (options.get(CREATE_KEYSTORE) != null
 				? Boolean.parseBoolean((String) options.get(CREATE_KEYSTORE)) : false);
@@ -214,7 +213,7 @@ public class FIPSSecurityVault implements SecurityVault {
 		}
 
 		// read and possibly convert vault content
-		readVaultContent(keystoreURL, encFileDir);
+		readVaultContent(keystoreURL);
 
 		FIPSLogger.LOGGER.infoVaultInitialized();
 		finishedInit = true;
@@ -328,6 +327,55 @@ public class FIPSSecurityVault implements SecurityVault {
 		}
 	}
 
+	/**
+	 * Determine the path to the directory for the vault data file. This will
+	 * substitute any properties that are embedded within the directory name.
+	 * 
+	 * @param vaultDir
+	 *            the initial vault directory with possible embedded properties
+	 * @return the path to the vault data file
+	 * @throws SecurityVaultException
+	 */
+	private String determineVaultDataPath(String vaultDir) throws SecurityVaultException {
+		// determine if there are properties embedded in the file directory
+		if (vaultDir.contains("${)")) {
+			// replace single ':' with PL default property separator
+			vaultDir = vaultDir.replaceAll(":", StringUtil.PROPERTY_DEFAULT_SEPARATOR);
+
+			// decode any embedded property values
+			vaultDir = StringUtil.getSystemPropertyAsString(vaultDir);
+		}
+
+		FIPSLogger.LOGGER.traceDecodedVaultDirectory(vaultDir);
+
+		// make sure that decoded value ends with file separator
+		if (!vaultDir.endsWith(File.separator))
+			throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.invalidDirectoryFormatMessage(vaultDir));
+
+		if (directoryExists(vaultDir) == false)
+			throw new SecurityVaultException(FIPSVaultMessages.MESSAGES.fileOrDirectoryDoesNotExistMessage(vaultDir));
+
+		return vaultDir + VAULT_CONTENT_FILE;
+	}
+
+	/**
+	 * Load the keystore password from multiple options based on the given
+	 * definition including unmasking the string, running a platform command, or
+	 * using a custom class
+	 * 
+	 * @param passwordDef
+	 *            how the password should be retrieved, typically an obfuscated
+	 *            string
+	 * @param salt
+	 *            the salt for PBKDF2
+	 * @param iterationCount
+	 *            the iteration count for PBKDF2
+	 * @param iv
+	 *            once a key is derived, the initialization vector used to
+	 *            decrypt
+	 * @return the keystore password as a character array
+	 * @throws Exception
+	 */
 	private char[] loadKeystorePassword(String passwordDef, byte[] salt, int iterationCount, byte[] iv)
 			throws Exception {
 		final char[] password;
@@ -346,23 +394,33 @@ public class FIPSSecurityVault implements SecurityVault {
 		return password;
 	}
 
-	private void setUpVault(String keystoreURL, String decodedEncFileDir) throws IOException, GeneralSecurityException {
+	/**
+	 * Creates a new password vault and writes it to the filesystem. Also, gets
+	 * the admin key. If one does not exist, it's created and written to the
+	 * keystore
+	 * 
+	 * @param keystoreURL
+	 *            the keystore file location
+	 * @throws IOException
+	 * @throws GeneralSecurityException
+	 */
+	private void setUpVault(String keystoreURL) throws IOException, GeneralSecurityException {
 		vaultContent = new SecurityVaultData();
 		writeVaultData();
 
-		SecretKey sk = getAdminKey();
-		if (sk != null) {
-			adminKey = sk;
-		} else {
+		adminKey = getAdminKey();
+		if (adminKey == null) {
+			// if no admin key and we're unable to create keystore then
+			// expected key missing from keystore
 			if (!createKeyStore) {
 				throw FIPSVaultMessages.MESSAGES.vaultDoesnotContainSecretKey(alias);
 			}
+
 			// try to generate new admin key and store it under specified alias
-			sk = CryptoUtil.generateKey();
-			KeyStore.SecretKeyEntry skEntry = new KeyStore.SecretKeyEntry(sk);
+			adminKey = CryptoUtil.generateKey();
+			KeyStore.SecretKeyEntry skEntry = new KeyStore.SecretKeyEntry(adminKey);
 			try {
 				keystore.setEntry(alias, skEntry, new KeyStore.PasswordProtection(storePass));
-				adminKey = sk;
 				saveKeyStoreToFile(keystoreURL);
 			} catch (KeyStoreException e) {
 				throw FIPSVaultMessages.MESSAGES.noSecretKeyandAliasAlreadyUsed(alias);
@@ -372,11 +430,15 @@ public class FIPSSecurityVault implements SecurityVault {
 		}
 	}
 
+	/**
+	 * Write the vault data to the filesystem
+	 * @throws IOException
+	 */
 	private void writeVaultData() throws IOException {
 		FileOutputStream fos = null;
 		ObjectOutputStream oos = null;
 		try {
-			fos = new FileOutputStream(decodedEncFileDir + VAULT_CONTENT_FILE);
+			fos = new FileOutputStream(vaultDataPath);
 			oos = new ObjectOutputStream(fos);
 			oos.writeObject(vaultContent);
 		} finally {
@@ -385,14 +447,22 @@ public class FIPSSecurityVault implements SecurityVault {
 		}
 	}
 
-	private boolean vaultFileExists(String fileName) {
-		File file = new File(this.decodedEncFileDir + fileName);
-		return file != null && file.exists() && file.canRead();
+	/**
+	 * @return true if the vault data file exists and its writable and readable
+	 */
+	private boolean vaultFileExists() {
+		File file = new File(vaultDataPath);
+		return file != null && file.exists() && file.canRead() && file.canWrite();
 	}
 
+	/**
+	 * @param dir
+	 *            directory being tested
+	 * @return true if the directory exists
+	 */
 	private boolean directoryExists(String dir) {
 		File file = new File(dir);
-		return file != null && file.exists();
+		return file != null && file.exists() && file.isDirectory();
 	}
 
 	private void safeClose(InputStream fis) {
@@ -413,46 +483,51 @@ public class FIPSSecurityVault implements SecurityVault {
 		}
 	}
 
-	private void readVaultContent(String keystoreURL, String encFileDir) throws SecurityVaultException {
+	/**
+	 * Loads existing vault content or sets up a new vault if none exists. Also
+	 * sets the admin key to decrypt the vault data by either reading it from
+	 * the keystore or creating it and storing it in the keystore
+	 * 
+	 * @param keystoreURL
+	 *            the URL to the keystore
+	 * @throws SecurityVaultException
+	 */
+	private void readVaultContent(String keystoreURL) throws SecurityVaultException {
 
 		try {
-			if (encFileDir.contains("${)")) {
-				encFileDir = encFileDir.replaceAll(":", StringUtil.PROPERTY_DEFAULT_SEPARATOR);
-			}
-			decodedEncFileDir = StringUtil.getSystemPropertyAsString(encFileDir); // replace
-																					// single
-																					// ":"
-																					// with
-																					// PL
-																					// default
-
-			if (directoryExists(decodedEncFileDir) == false)
-				throw new SecurityVaultException(
-						FIPSVaultMessages.MESSAGES.fileOrDirectoryDoesNotExistMessage(decodedEncFileDir));
-
-			if (!(decodedEncFileDir.endsWith("/") || decodedEncFileDir.endsWith("\\"))) {
-				decodedEncFileDir = decodedEncFileDir + File.separator;
-			}
-
-			if (vaultFileExists(VAULT_CONTENT_FILE)) {
+			if (vaultFileExists()) {
 				readVaultContent();
 			} else {
-				setUpVault(keystoreURL, decodedEncFileDir);
+				setUpVault(keystoreURL);
 			}
 		} catch (Exception e) {
 			throw new SecurityVaultException(e);
 		}
 	}
 
+	/**
+	 * Writes the existing keystore to the given URL
+	 * 
+	 * @param keystoreURL
+	 *            the location to write the keystore
+	 * @throws Exception
+	 */
 	private void saveKeyStoreToFile(String keystoreURL) throws Exception {
 		keystore.store(new FileOutputStream(new File(keystoreURL)), storePass);
 	}
 
+	/**
+	 * Reads the vault data and sets the administrative cryptographic key to
+	 * enable decrypting the password data
+	 * 
+	 * @throws Exception
+	 */
 	private void readVaultContent() throws Exception {
 		FileInputStream fis = null;
 		ObjectInputStream ois = null;
+
 		try {
-			fis = new FileInputStream(decodedEncFileDir + VAULT_CONTENT_FILE);
+			fis = new FileInputStream(vaultDataPath);
 			ois = new ObjectInputStream(fis);
 			vaultContent = (SecurityVaultData) ois.readObject();
 		} finally {
@@ -486,9 +561,9 @@ public class FIPSSecurityVault implements SecurityVault {
 	}
 
 	/**
-	 * Get key store based on options passed to PicketBoxSecurityVault.
+	 * Get key store based on options passed to the security vault.
 	 * 
-	 * @return
+	 * @return the existing keystore or a new keystore
 	 */
 	private KeyStore getKeyStore(String keystoreURL) {
 
@@ -508,5 +583,4 @@ public class FIPSSecurityVault implements SecurityVault {
 			throw FIPSVaultMessages.MESSAGES.unableToGetKeyStore(e, keystoreURL);
 		}
 	}
-
 }
