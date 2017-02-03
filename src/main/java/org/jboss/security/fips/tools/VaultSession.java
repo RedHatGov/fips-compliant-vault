@@ -302,13 +302,18 @@ public final class VaultSession {
 	 * @param attributeName
 	 */
 	private void attributeCreatedDisplay(String vaultBlock, String attributeName) {
-		System.out.println("Secured attribute value has been stored in vault. ");
+		System.out.println();
+		System.out.println("********************************************");
+		System.out.println("Secured attribute value has been stored in vault.");
 		System.out.println("Please make note of the following:");
 		System.out.println("********************************************");
 		System.out.println("Vault Block:" + vaultBlock);
 		System.out.println("Attribute Name:" + attributeName);
-		System.out.println("Configuration should be done as follows:");
-		System.out.println(securedAttributeConfigurationString(vaultBlock, attributeName));
+		System.out.println();
+		System.out.println("The following string should be cut/pasted wherever this password occurs in the");
+		System.out.println("EAP configuration file.  If you're changing an existing password in the vault,");
+		System.out.println("the entry in the configuration file can remain the same:");
+		System.out.println("${" + securedAttributeConfigurationString(vaultBlock, attributeName) + "}");
 		System.out.println("********************************************");
 	}
 
@@ -327,13 +332,15 @@ public final class VaultSession {
 	 * Display info about vault itself in form of AS7 configuration file.
 	 */
 	public void vaultConfigurationDisplay() {
+		System.out.println();
+		System.out.println("********************************************");
 		System.out.println("Vault Configuration in configuration file:");
 		System.out.println("********************************************");
-		System.out.println("...");
-		System.out.println("</extensions>");
+		System.out.println("    ...");
+		System.out.println("    </extensions>");
 		System.out.println(vaultConfiguration());
-		System.out.println("<management>");
-		System.out.println("...");
+		System.out.println("    <management>");
+		System.out.println("    ...");
 		System.out.println("********************************************");
 	}
 
@@ -349,10 +356,10 @@ public final class VaultSession {
 
 		createKeystore = false;
 		Map<String, Object> vaultOptions = getVaultOptionsMap();
-		
+
 		List<String> keys = new ArrayList<String>(vaultOptions.keySet());
 		Collections.sort(keys);
-		
+
 		for (String key : keys) {
 			sb.append("      <vault-option name=\"" + key + "\" value=\"" + vaultOptions.get(key) + "\"/>")
 					.append("\n");
