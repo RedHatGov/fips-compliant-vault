@@ -24,7 +24,10 @@ package org.jboss.security.fips.tools;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.crypto.SecretKey;
@@ -329,7 +332,8 @@ public final class VaultSession {
 		System.out.println("...");
 		System.out.println("</extensions>");
 		System.out.println(vaultConfiguration());
-		System.out.println("<management> ...");
+		System.out.println("<management>");
+		System.out.println("...");
 		System.out.println("********************************************");
 	}
 
@@ -340,16 +344,21 @@ public final class VaultSession {
 	 */
 	public String vaultConfiguration() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("<vault code=\"" + FIPSSecurityVault.class.getName() + "\" module=\"org.jboss.security.fips\" >")
+		sb.append("    <vault code=\"" + FIPSSecurityVault.class.getName() + "\" module=\"org.jboss.security.fips\" >")
 				.append("\n");
 
 		createKeystore = false;
 		Map<String, Object> vaultOptions = getVaultOptionsMap();
-		for (String key : vaultOptions.keySet()) {
-			sb.append("  <vault-option name=\"" + key + "\" value=\"" + vaultOptions.get(key) + "\"/>").append("\n");
+		
+		List<String> keys = new ArrayList<String>(vaultOptions.keySet());
+		Collections.sort(keys);
+		
+		for (String key : keys) {
+			sb.append("      <vault-option name=\"" + key + "\" value=\"" + vaultOptions.get(key) + "\"/>")
+					.append("\n");
 		}
 
-		sb.append("</vault>");
+		sb.append("    </vault>");
 		return sb.toString();
 	}
 
