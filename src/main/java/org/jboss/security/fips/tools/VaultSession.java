@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.crypto.SecretKey;
 import org.bouncycastle.util.encoders.Base64;
@@ -264,6 +265,20 @@ public final class VaultSession {
 		return vault.exists(vaultBlock, attributeName);
 	}
 
+	/**
+	 * @return a sorted list of all the vault blocks and their attributes
+	 */
+	public List<String> getSecuredAttributeList() throws Exception {
+		Set<String> keySet = vault.keyList();
+		if (keySet == null || keySet.isEmpty()) {
+			return new ArrayList<String>();
+		}
+		
+		List<String> keys = new ArrayList<String>(keySet);
+		Collections.sort(keys);
+		return keys;
+	}
+	
 	/**
 	 * This method removes secured attribute stored in {@link SecurityVault}.
 	 * After successful remove operation returns true. Otherwise false.
