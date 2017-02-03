@@ -30,10 +30,6 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-
 import javax.crypto.SecretKey;
 
 import org.jboss.security.fips.FIPSVaultMessages;
@@ -138,7 +134,7 @@ public class KeyStoreUtil {
 			throws GeneralSecurityException, IOException {
 		if (ksStream == null)
 			throw FIPSVaultMessages.MESSAGES.invalidNullArgument("ksStream");
-		KeyStore ks = KeyStore.getInstance(CryptoUtil.PROVIDER_NAME, KEYSTORE_TYPE);
+		KeyStore ks = KeyStore.getInstance(KEYSTORE_TYPE, CryptoUtil.PROVIDER_NAME);
 		ks.load(ksStream, storePass);
 		return ks;
 	}
