@@ -470,7 +470,7 @@ public class FIPSSecurityVault implements SecurityVault {
 			if (fis != null) {
 				fis.close();
 			}
-		} catch (Exception e) {
+		} catch (Throwable t) {
 		}
 	}
 
@@ -479,7 +479,7 @@ public class FIPSSecurityVault implements SecurityVault {
 			if (os != null) {
 				os.close();
 			}
-		} catch (Exception e) {
+		} catch (Throwable t) {
 		}
 	}
 
