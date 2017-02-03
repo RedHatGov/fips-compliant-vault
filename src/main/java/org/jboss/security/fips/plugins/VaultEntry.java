@@ -1,9 +1,18 @@
 package org.jboss.security.fips.plugins;
 
+import java.io.Serializable;
+
 /**
  * Simple holder class for vault entries
  */
-class VaultEntry {
+class VaultEntry implements Serializable {
+
+	/**
+	 * Do not change this suid, it is used for handling different versions of
+	 * serialized data.
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private byte[] iv;
 	private byte[] encryptedData;
 
