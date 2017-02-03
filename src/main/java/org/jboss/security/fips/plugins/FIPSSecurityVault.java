@@ -269,7 +269,7 @@ public class FIPSSecurityVault implements SecurityVault {
 			writeVaultData();
 		} catch (IOException e) {
 			throw new SecurityVaultException(
-					FIPSVaultMessages.MESSAGES.unableToWriteVaultDataFileMessage(VAULT_CONTENT_FILE), e);
+					FIPSVaultMessages.MESSAGES.unableToWriteVaultDataFileMessage(vaultDataPath), e);
 		}
 	}
 
