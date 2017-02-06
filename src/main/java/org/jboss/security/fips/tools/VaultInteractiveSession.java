@@ -121,7 +121,7 @@ public class VaultInteractiveSession {
 				}
 			}
 
-			vaultNISession = new VaultSession(keystoreURL, new String(keystorePasswd), encDir, salt, iterationCount,
+			vaultNISession = new VaultSession(keystoreURL, keystorePasswd, encDir, salt, iterationCount,
 					iv, createKeystore);
 
 			while (keystoreAlias == null || keystoreAlias.length() == 0) {

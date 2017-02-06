@@ -25,6 +25,7 @@ package org.jboss.security.fips.tools;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +51,13 @@ public final class VaultSession {
 	static final Charset CHARSET = Charset.forName("UTF-8");
 
 	private String keystoreURL;
-	private String keystorePassword;
+
+	// this could be a plaintext password, a masked password, or a password
+	// command
+	private char[] rawKeystorePassword;
+
+	// this could be a masked password or a password command as expected by
+	// FIPSSecurityVault
 	private String keystoreMaskedPassword;
 	private String encryptionDirectory;
 	private byte[] salt;
@@ -73,10 +80,10 @@ public final class VaultSession {
 	 * @param createKeystore
 	 * @throws Exception
 	 */
-	public VaultSession(String keystoreURL, String keystorePassword, String encryptionDirectory, byte[] salt,
+	public VaultSession(String keystoreURL, char[] keystorePassword, String encryptionDirectory, byte[] salt,
 			int iterationCount, byte[] iv, boolean createKeystore) throws Exception {
 		this.keystoreURL = keystoreURL;
-		this.keystorePassword = keystorePassword;
+		this.rawKeystorePassword = keystorePassword;
 		this.encryptionDirectory = encryptionDirectory;
 		this.salt = salt;
 		this.iterationCount = iterationCount;
@@ -116,8 +123,20 @@ public final class VaultSession {
 	}
 
 	protected void validateKeystorePassword() throws Exception {
-		if (keystorePassword == null || keystorePassword.isEmpty()) {
-			throw new Exception("Keystore password has to be specified.");
+		if (rawKeystorePassword == null || rawKeystorePassword.length < FIPSSecurityVault.PASS_MASK_PREFIX.length()) {
+			throw new Exception("Keystore password has to be at least " + FIPSSecurityVault.PASS_MASK_PREFIX.length()
+					+ " characters long.");
+		}
+
+		// this could be a plain text password, masked password, or a password
+		// command
+		char[] passwordMask = FIPSSecurityVault.PASS_MASK_PREFIX.toCharArray();
+		char[] maskPrefix = Arrays.copyOf(rawKeystorePassword, FIPSSecurityVault.PASS_MASK_PREFIX.length());
+
+		if (Util.isPasswordCommand(rawKeystorePassword) || Arrays.equals(passwordMask, maskPrefix)) {
+			keystoreMaskedPassword = new String(rawKeystorePassword);
+		} else {
+			keystoreMaskedPassword = computeMaskedPassword();
 		}
 	}
 
@@ -170,7 +189,7 @@ public final class VaultSession {
 
 		// get the mask key
 		SecretKey maskKey = CryptoUtil.deriveMaskKey(salt, iterationCount);
-		String maskedPass = CryptoUtil.maskKeystorePassword(keystorePassword.toCharArray(), maskKey, iv);
+		String maskedPass = CryptoUtil.maskKeystorePassword(rawKeystorePassword, maskKey, iv);
 
 		return FIPSSecurityVault.PASS_MASK_PREFIX + maskedPass;
 	}
@@ -198,8 +217,7 @@ public final class VaultSession {
 		if (vaultAlias == null) {
 			throw new Exception("Vault alias has to be specified.");
 		}
-		this.keystoreMaskedPassword = (Util.isPasswordCommand(keystorePassword)) ? keystorePassword
-				: computeMaskedPassword();
+
 		this.vaultAlias = vaultAlias;
 		initSecurityVault();
 	}
@@ -273,12 +291,12 @@ public final class VaultSession {
 		if (keySet == null || keySet.isEmpty()) {
 			return new ArrayList<String>();
 		}
-		
+
 		List<String> keys = new ArrayList<String>(keySet);
 		Collections.sort(keys);
 		return keys;
 	}
-	
+
 	/**
 	 * This method removes secured attribute stored in {@link SecurityVault}.
 	 * After successful remove operation returns true. Otherwise false.
