@@ -347,7 +347,7 @@ public class Util {
 
 		String execCmd(String cmd) throws Exception;
 	}
-
+	
 	/**
 	 * Checks whether password can be loaded by {@link #loadPassword(String)}.
 	 * 
@@ -357,33 +357,11 @@ public class Util {
 	 *         false otherwise.
 	 */
 	public static boolean isPasswordCommand(String passwordCmd) {
-		return (passwordCmd != null) && (passwordCmd.startsWith("{EXT}") || passwordCmd.startsWith("{EXTC") // it
-																											// has
-																											// to
-																											// be
-																											// without
-																											// closing
-																											// brace
-																											// to
-																											// cover
-																											// :<time
-																											// in
-																											// millis>
-				|| passwordCmd.startsWith("{CMD}") || passwordCmd.startsWith("{CMDC") // it
-																						// has
-																						// to
-																						// be
-																						// without
-																						// closing
-																						// brace
-																						// to
-																						// cover
-																						// :<time
-																						// in
-																						// millis>
-				|| passwordCmd.startsWith("{CLASS")); // it has to be without
-														// losing brace to cover
-														// @jboss_module
+		// EXT, EXTC, CMD, CMDC: it has to be without closing brace to cover :<time in millis
+		// CLASS: it has to be without closing brace to cover @jboss_module
+		return (passwordCmd != null) && (passwordCmd.startsWith("{EXT}") || passwordCmd.startsWith("{EXTC")
+				|| passwordCmd.startsWith("{CMD}") || passwordCmd.startsWith("{CMDC")
+				|| passwordCmd.startsWith("{CLASS"));
 	}
 
 	/**
@@ -397,5 +375,4 @@ public class Util {
 	public static boolean isPasswordCommand(char[] passwordCmd) {
 		return (passwordCmd != null) && isPasswordCommand(new String(passwordCmd));
 	}
-
 }
