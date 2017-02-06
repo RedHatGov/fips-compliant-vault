@@ -165,8 +165,8 @@ public class VaultTool {
 				"base-64 encoded salt of at least 128 bits in length before encoding.  "
 						+ "DEFAULT random value generated.");
 		options.addOption("i", ITERATION_PARAM, true, "Iteration count of at least 1000.  " + "DEFAULT 1000.");
-		options.addOption("v", ALIAS_PARAM, true, "Vault admin key alias.  DEFAULT 'adminKey'.");
-		options.addOption("c", IV_PARAM, true,
+		options.addOption("d", ALIAS_PARAM, true, "Vault admin key alias.  DEFAULT 'adminKey'.");
+		options.addOption("v", IV_PARAM, true,
 				"base-64 encoded initialization vector that's 128 bits in length before encoding.  "
 						+ "DEFAULT random value generated.");
 		options.addOption("b", VAULT_BLOCK_PARAM, true, "Vault block");
