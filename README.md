@@ -1,14 +1,14 @@
 fips-compliant-vault
 ====================
 
-A FIPS 140-2 level 1 compliant implementation of a password vault
+A FIPS 140-2 Level 1 compliant implementation of a password vault
 for Red Hat JBoss EAP 6 that works across operating systems.  This
 strictly means that EAP is using FIPS 140-2 level 1 certified
 libraries to provide the cryptographic functions needed to mask
 sensitive strings in the EAP configuration files.  Red Hat JBoss
 EAP itself is not FIPS certified, but it's able to use those certified
-libraries.  This implementation takes advantage of the (Legion of
-the Bouncy Castle pure java FIPS 140-2 Level 1 certified library)[http://www.bouncycastle.org/fips-java/].
+libraries.  This implementation takes advantage of the [Legion of
+the Bouncy Castle pure java FIPS 140-2 Level 1 certified library](http://www.bouncycastle.org/fips-java/).
 Huge thanks to them for their efforts getting their implementation
 certified!  If you find their libraries useful, please contribute
 to their ongoing efforts to maintain certification.
@@ -34,7 +34,7 @@ Configure Tools to Build
 This should build on all operating systems that support both java
 and maven.  Please make sure that you have that tooling in place.
 In addtion, you need to get the certified Legion of the Bouncy
-Castle Java FIPS library from the (Bouncy Castle Java FIPS page)[http://www.bouncycastle.org/fips-java/].
+Castle Java FIPS library from the [Bouncy Castle Java FIPS page](http://www.bouncycastle.org/fips-java/).
 After the click-through acknowledgement, download the provider
 bc-fips-1.0.0.jar file.  Next, add that jar file to your local maven
 repository.  In a terminal window, type the following command:
