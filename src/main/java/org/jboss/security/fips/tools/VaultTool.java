@@ -161,11 +161,14 @@ public class VaultTool {
 		options.addOption("p", KEYSTORE_PASSWORD_PARAM, true, "The plaintext password -OR- "
 				+ "the base-64 encoded masked keystore password -OR- " + "a valid password command");
 		options.addOption("e", ENC_DIR_PARAM, true, "Directory containing encrypted files");
-		options.addOption("s", SALT_PARAM, true, "base-64 encoded salt of at least 128 bits in length before encoding");
-		options.addOption("i", ITERATION_PARAM, true, "Iteration count of at least 1000");
-		options.addOption("v", ALIAS_PARAM, true, "Vault admin key alias");
+		options.addOption("s", SALT_PARAM, true,
+				"base-64 encoded salt of at least 128 bits in length before encoding.  "
+						+ "DEFAULT random value generated.");
+		options.addOption("i", ITERATION_PARAM, true, "Iteration count of at least 1000.  " + "DEFAULT 1000.");
+		options.addOption("v", ALIAS_PARAM, true, "Vault admin key alias.  DEFAULT 'adminKey'.");
 		options.addOption("c", IV_PARAM, true,
-				"base-64 encoded initialization vector that's 128 bits in length before encoding");
+				"base-64 encoded initialization vector that's 128 bits in length before encoding.  "
+						+ "DEFAULT random value generated.");
 		options.addOption("b", VAULT_BLOCK_PARAM, true, "Vault block");
 		options.addOption("a", ATTRIBUTE_PARAM, true, "Attribute name");
 		options.addOption("t", CREATE_KEYSTORE_PARAM, false, "Automatically create keystore when it doesn't exist");
@@ -277,7 +280,7 @@ public class VaultTool {
 	private void printUsage() {
 		HelpFormatter help = new HelpFormatter();
 		String suffix = (VaultTool.isWindows() ? ".bat" : ".sh");
-		help.printHelp("vault" + suffix + " <empty> | ", options, true);
+		help.printHelp("fips-vault" + suffix + " <empty> | ", options, true);
 	}
 
 	public static boolean isWindows() {
