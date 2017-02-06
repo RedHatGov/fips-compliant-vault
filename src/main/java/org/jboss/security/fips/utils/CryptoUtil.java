@@ -221,7 +221,7 @@ public class CryptoUtil {
 	 */
 	public static String maskKeystorePassword(char[] storePass, SecretKey maskKey, byte[] iv) throws Exception {
 		// convert keystore password to bytes without using String
-		byte[] plaintext = Charset.forName("UTF-8").encode(CharBuffer.wrap(storePass)).array();
+		byte[] plaintext = StringUtil.convertToBytes(storePass);
 
 		// mask the key
 		byte[] ciphertext = encrypt(MASK_ALG_FULL, maskKey, iv, plaintext);

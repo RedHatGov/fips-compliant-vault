@@ -21,7 +21,10 @@
  */
 package org.jboss.security.fips.utils;
 
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -141,5 +144,28 @@ public class StringUtil {
 			list.add(tokenizer.nextToken());
 		}
 		return list;
+	}
+
+	/**
+	 * Convert character array to UTF-8 encoded byte array, removing trailing
+	 * nulls
+	 * 
+	 * @param charArray
+	 *            the character array to be converted
+	 * @return the UTF-8 encoded byte array
+	 */
+	public static byte[] convertToBytes(char[] charArray) {
+		// convert keystore password to bytes without using String
+		byte[] textWithTrailingNulls = Charset.forName("UTF-8").encode(CharBuffer.wrap(charArray)).array();
+
+		// remove trailing null characters from the initial byte conversion
+		int newLength = textWithTrailingNulls.length;
+		for (int i = textWithTrailingNulls.length - 1; i >= 0; i--) {
+			if (textWithTrailingNulls[i] == 0) {
+				newLength--;
+			}
+		}
+
+		return Arrays.copyOf(textWithTrailingNulls, newLength);
 	}
 }
