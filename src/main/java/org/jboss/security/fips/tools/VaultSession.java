@@ -80,10 +80,10 @@ public final class VaultSession {
 	 * @param createKeystore
 	 * @throws Exception
 	 */
-	public VaultSession(String keystoreURL, char[] keystorePassword, String encryptionDirectory, byte[] salt,
+	public VaultSession(String keystoreURL, char[] rawKeystorePassword, String encryptionDirectory, byte[] salt,
 			int iterationCount, byte[] iv, boolean createKeystore) throws Exception {
 		this.keystoreURL = keystoreURL;
-		this.rawKeystorePassword = keystorePassword;
+		this.rawKeystorePassword = rawKeystorePassword;
 		this.encryptionDirectory = encryptionDirectory;
 		this.salt = salt;
 		this.iterationCount = iterationCount;
@@ -123,11 +123,6 @@ public final class VaultSession {
 	}
 
 	protected void validateKeystorePassword() throws Exception {
-		if (rawKeystorePassword == null || rawKeystorePassword.length < FIPSSecurityVault.PASS_MASK_PREFIX.length()) {
-			throw new Exception("Keystore password has to be at least " + FIPSSecurityVault.PASS_MASK_PREFIX.length()
-					+ " characters long.");
-		}
-
 		// this could be a plain text password, masked password, or a password
 		// command
 		char[] passwordMask = FIPSSecurityVault.PASS_MASK_PREFIX.toCharArray();
@@ -135,7 +130,7 @@ public final class VaultSession {
 
 		if (Util.isPasswordCommand(rawKeystorePassword) || Arrays.equals(passwordMask, maskPrefix)) {
 			keystoreMaskedPassword = new String(rawKeystorePassword);
-		} else {
+		} else { // plain text password so encrypt it
 			keystoreMaskedPassword = computeMaskedPassword();
 		}
 	}

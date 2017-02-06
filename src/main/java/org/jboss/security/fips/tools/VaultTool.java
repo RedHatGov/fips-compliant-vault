@@ -25,8 +25,6 @@ import java.io.Console;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-import javax.crypto.SecretKey;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -36,7 +34,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.bouncycastle.util.encoders.Base64;
-import org.jboss.security.Util;
 import org.jboss.security.fips.utils.CryptoUtil;
 import org.jboss.security.vault.SecurityVault;
 
@@ -161,8 +158,8 @@ public class VaultTool {
 	private void initOptions() {
 		options = new Options();
 		options.addOption("k", KEYSTORE_PARAM, true, "Keystore URL");
-		options.addOption("p", KEYSTORE_PASSWORD_PARAM, true,
-				"The base-64 encoded masked keystore password -OR- a valid password command");
+		options.addOption("p", KEYSTORE_PASSWORD_PARAM, true, "The plaintext password -OR- "
+				+ "the base-64 encoded masked keystore password -OR- " + "a valid password command");
 		options.addOption("e", ENC_DIR_PARAM, true, "Directory containing encrypted files");
 		options.addOption("s", SALT_PARAM, true, "base-64 encoded salt of at least 128 bits in length before encoding");
 		options.addOption("i", ITERATION_PARAM, true, "Iteration count of at least 1000");
@@ -196,7 +193,7 @@ public class VaultTool {
 		}
 
 		String keystoreURL = cmdLine.getOptionValue(KEYSTORE_PARAM, "vault.bcfks");
-		String maskedKeystorePassword = cmdLine.getOptionValue(KEYSTORE_PASSWORD_PARAM, "");
+		String keystorePasswordStr = cmdLine.getOptionValue(KEYSTORE_PASSWORD_PARAM, "");
 		String encryptionDirectory = cmdLine.getOptionValue(ENC_DIR_PARAM, "vault");
 
 		byte[] salt = CryptoUtil.genRandomBytes(CryptoUtil.PBE_SALT_MIN_LEN);
@@ -225,13 +222,7 @@ public class VaultTool {
 			}
 		}
 
-		char[] keystorePassword = null;
-		if (Util.isPasswordCommand(maskedKeystorePassword)) {
-			keystorePassword = maskedKeystorePassword.toCharArray();
-		} else {
-			SecretKey maskKey = CryptoUtil.deriveMaskKey(salt, iterationCount);
-			keystorePassword = CryptoUtil.unmaskKeystorePassword(maskedKeystorePassword, maskKey, iv);
-		}
+		char[] keystorePassword = keystorePasswordStr.toCharArray();
 
 		boolean createKeyStore = cmdLine.hasOption(CREATE_KEYSTORE_PARAM);
 
