@@ -212,7 +212,7 @@ public class FIPSSecurityVault implements SecurityVault {
 			throw new SecurityVaultException(e);
 		}
 
-		// read and possibly convert vault content
+		// read vault content
 		readVaultContent(keystoreURL);
 
 		FIPSLogger.LOGGER.infoVaultInitialized();
@@ -410,14 +410,11 @@ public class FIPSSecurityVault implements SecurityVault {
 
 		adminKey = getAdminKey();
 		if (adminKey == null) {
-			// if no admin key and we're unable to create keystore then
-			// expected key missing from keystore
-			if (!createKeyStore) {
-				throw FIPSVaultMessages.MESSAGES.vaultDoesnotContainSecretKey(alias);
-			}
-
-			// try to generate new admin key and store it under specified alias
+			// create new key for new vault
+			FIPSLogger.LOGGER.generatingNewAdminKey(alias);
 			adminKey = CryptoUtil.generateKey();
+
+			// store it under specified alias
 			KeyStore.SecretKeyEntry skEntry = new KeyStore.SecretKeyEntry(adminKey);
 			try {
 				keystore.setEntry(alias, skEntry, new KeyStore.PasswordProtection(storePass));

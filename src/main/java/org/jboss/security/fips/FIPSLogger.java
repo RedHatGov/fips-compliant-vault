@@ -39,8 +39,12 @@ public interface FIPSLogger extends BasicLogger {
 	@LogMessage(level = Logger.Level.INFO)
 	@Message(id = 371, value = "Security Vault keystore does not contain SecretKey entry under alias (%s)")
 	void vaultDoesNotContainSecretKey(String alias);
-	
+
 	@LogMessage(level = Logger.Level.TRACE)
 	@Message(id = 372, value = "decoded vault data directory: %s")
 	void traceDecodedVaultDirectory(String vaultDir);
+
+	@LogMessage(level = Logger.Level.INFO)
+	@Message(id = 373, value = "Generating a new admin key under alias (%s)")
+	void generatingNewAdminKey(String alias);
 }
