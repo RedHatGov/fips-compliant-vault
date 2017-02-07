@@ -168,7 +168,7 @@ public class CryptoUtil {
 	 * @return the encrypted value as a byte array
 	 */
 	public static byte[] encrypt(SecretKey key, byte[] iv, char[] value) throws GeneralSecurityException {
-		byte[] plaintext = Charset.forName("UTF-8").encode(CharBuffer.wrap(value)).array();
+		byte[] plaintext = StringUtil.convertToBytes(value);
 		byte[] ciphertext = encrypt(ALG_FULL, key, iv, plaintext);
 
 		// clear sensitive data
