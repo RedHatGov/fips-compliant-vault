@@ -322,4 +322,23 @@ defaults for alias and iteration count:
         <management>
         ...
     ******************************************************************************
-    
+   
+In the above example, the keystore password was supplied as a masked
+base-64 encoded string with the matching salt and initialization
+vector values from before.
+
+Alternative Commands to Retrieve the Keystore Password
+------------------------------------------------------
+
+As mentioned in the disclaimer, you can also use alternative commands
+to retrieve the keystore password since masking is really just
+obfuscating the password.  These commands are supplied in the
+keystore password parameter, rather running interactively or with
+the command line.  The full syntax for the alternative commands
+are:
+
+ * the masked password as a base64 string prepended with the literal 'MASK-'
+ * the literal '{EXT}...' where the '...' is the exact command line that will be passed to the Runtime.exec(String) method to execute a platform command. The first line of the command output is used as the password.
+ * the literal '{EXTC[:expiration_in_millis]}...' where the '...' is the exact command line that will be passed to the Runtime.exec(String) method to execute a platform command. The first line of the command output is used as the password. The EXTC variant will cache the passwords for expiration_in_millis milliseconds. Default cache expiration is 0 = infinity.
+ * the literal '{CMD}...' or '{CMDC}...' for a general command to execute. The general command is a string delimited by ',' where the first part is the actual command and further parts represents its parameters. The comma can be backslashed in order to keep it as the part of a parameter.
+ * the literal '{CLASS[@modulename]}classname[:ctorargs]' where the '[:ctorargs]' is an optional string delimited by the ':' from the classname that will be passed to the classname ctor. The ctorargs itself is a comma delimited list of strings. The password is obtained from classname by invoking a 'char[] toCharArray()' method if found, otherwise, the 'String toString()'
