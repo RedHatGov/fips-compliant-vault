@@ -89,7 +89,7 @@ public class VaultInteractiveSession {
 					salt = null;
 				}
 
-				if (salt.length < CryptoUtil.PBE_SALT_MIN_LEN) {
+				if (salt != null && salt.length < CryptoUtil.PBE_SALT_MIN_LEN) {
 					System.out.println("The salt is not at least " + CryptoUtil.PBE_SALT_MIN_LEN + " bytes in length.");
 					salt = null;
 				}
