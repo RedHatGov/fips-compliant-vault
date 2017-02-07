@@ -58,7 +58,6 @@ vault, unzip the distribution file into your `$JBOSS_HOME` folder:
 
     export JBOSS_HOME=/path/to/java-eap-6.4
     unzip -q target/fips-compliant-vault-1.0.0-dist.zip -d $JBOSS_HOME
-    chmod a+x $JBOSS_HOME/bin/fips-vault.sh
 
 Initialize and Populate the Vault
 =================================
