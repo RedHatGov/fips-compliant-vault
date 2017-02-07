@@ -414,7 +414,7 @@ Combining TLS Secured Web with BCFIPS
 
 Users may desire to run the SunJSSE provider, which contains the
 SSL/TLS implementation, in FIPS 140 compliant mode.  This is often
-referred to as "FIPS mode".  See full discussion (here)[http://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/FIPS.html].  This is not
+referred to as "FIPS mode".  See full discussion [here](http://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/FIPS.html).  This is not
 possible with EAP 6 due to the use of a wrapped JSSE TrustManager
 as documented in this JIRA.  However, it is possible to use the
 BCFIPS provider to mask the keystore password and leverage the
