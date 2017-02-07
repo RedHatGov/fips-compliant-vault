@@ -97,25 +97,25 @@ sensitive strings in the vault.  An example session is below:
     <b>0</b>
     Starting an interactive session
 
-    Enter directory to store encrypted files: /Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault
+    Enter directory to store encrypted files: <b>/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault</b>
 
-    Enter Keystore URL: /Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/vault.bcfks
+    Enter Keystore URL: <b>/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/vault.bcfks</b>
  
-    Create the keystore if it doesn't exist &lt;y/N&gt; y
+    Create the keystore if it doesn't exist &lt;y/N&gt; <b>y</b>
     
-    Please enter the keystore password:
-    Please confirm the keystore password:
+    Please enter the keystore password: <b>admin1jboss!</b>
+    Please confirm the keystore password: <b>admin1jboss!</b>
     
     The salt must be at least 16 bytes in length, before base-64 encoding.
-    Enter salt as a base-64 string (or ENTER for a random value):
+    Enter salt as a base-64 string (or ENTER for a random value): <b>ENTER</b>
     
     The iteration count must be at least 1000
-    Enter iteration count as a number (Eg: 2000): 1000
+    Enter iteration count as a number (Eg: 2000): <b>1000</b>
     
     The initialization vector must be 16 bytes in length, before base-64 encoding.
-    Enter iv as a base-64 string (or ENTER for a random value):
+    Enter iv as a base-64 string (or ENTER for a random value): <b>ENTER</b>
     
-    Enter Keystore Alias: adminKey
+    Enter Keystore Alias: <b>adminKey</b>
     
     Initializing Vault
     Feb 06, 2017 10:05:24 PM org.jboss.security.fips.plugins.FIPSSecurityVault setUpVault
@@ -144,13 +144,13 @@ sensitive strings in the vault.  An example session is below:
     
     Vault is initialized and ready for use
     Please enter a Digit::  0: Store a secured attribute  1: Check whether a secured attribute exists  2: Remove secured attribute  3: List all secured attributes  4: Exit
-    0
+    <b>0</b>
     Task: Store a secured attribute
     
-    Please enter the secured attribute value (e.g. a password):
-    Please confirm the secured attribute value (e.g. a password):
-    Enter Vault Block: keystore
-    Enter Attribute Name: password
+    Please enter the secured attribute value (e.g. a password): <b>admin1jboss!</b>
+    Please confirm the secured attribute value (e.g. a password): <b>admin1jboss!</b>
+    Enter Vault Block: <b>keystore</b>
+    Enter Attribute Name: <b>password</b>
     
     ******************************************************************************
     The secured attribute value has been stored in the password vault.  Please
@@ -167,5 +167,5 @@ sensitive strings in the vault.  An example session is below:
     ******************************************************************************
     
     Please enter a Digit::  0: Store a secured attribute  1: Check whether a secured attribute exists  2: Remove secured attribute  3: List all secured attributes  4: Exit
-    4
+    <b>4</b>
 </pre>
