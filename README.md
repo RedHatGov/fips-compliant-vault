@@ -36,7 +36,7 @@ and maven.  Please make sure that you have that tooling in place.
 In addtion, you need to get the certified Legion of the Bouncy
 Castle Java FIPS library from the [Bouncy Castle Java FIPS page](http://www.bouncycastle.org/fips-java/).
 After the click-through acknowledgement, download the provider
-bc-fips-1.0.0.jar file.  Next, add that jar file to your local maven
+`bc-fips-1.0.0.jar` file.  Next, add that jar file to your local maven
 repository.  In a terminal window, type the following command:
 
     mvn install:install-file -Dfile=bc-fips-1.0.0.jar \
@@ -365,7 +365,7 @@ installation.
                       -storepass 'admin1jboss!' \
                       -storetype BCFKS \
                       -providername BCFIPS \
-                      -providerpath $HOME/NotBackedUp/bc-fips-1.0.0.jar \
+                      -providerpath /path/to/bc-fips-1.0.0.jar \
                       -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
                       -v
     
@@ -386,7 +386,8 @@ Add a Self-signed Certificate to a BCFKS Keystore
 -------------------------------------------------
 
 This example uses `keytool` to create and add a self-signed certificate
-to a BCFKS type keystore.
+to a BCFKS type keystore.  Make sure that the `providerpath` option
+matches your installation.
 
     bash-3.2$ cd $JBOSS_HOME/vault
     bash-3.2$ keytool -genkeypair \
@@ -401,10 +402,148 @@ to a BCFKS type keystore.
                       -storetype BCFKS \
                       -providername BCFIPS \
                       -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
-                      -providerpath $HOME/NotBackedUp/bc-fips-1.0.0.jar \
+                      -providerpath /path/to/bc-fips-1.0.0.jar \
                       -v
 
     Generating 3,072 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 365 days
         for: CN=Vault Cert, OU=JBoss, O=Red Hat, L=Raleigh, ST=NC, C=US
     [Storing vault.bcfks]
 
+Combining TLS Secured Web with BCFIPS
+=====================================
+
+Users may desire to run the SunJSSE provider, which contains the
+SSL/TLS implementation, in FIPS 140 compliant mode.  This is often
+referred to as "FIPS mode".  See full discussion (here)[http://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/FIPS.html].  This is not
+possible with EAP 6 due to the use of a wrapped JSSE TrustManager
+as documented in this JIRA.  However, it is possible to use the
+BCFIPS provider to mask the keystore password and leverage the
+Bouncy Castle FIPS KeyStore (BCFKS) to store the certificates.
+
+Override the Default java.security Policy
+-----------------------------------------
+
+Rather than modify the system-wide `$JRE_HOME/lib/security/java.security`
+policy file, you can append the following to the
+`$JBOSS_HOME/bin/standalone.conf` (or the `domain.conf`) file:
+
+    # override the security providers
+    JAVA_OPTS="$JAVA_OPTS -Djava.security.properties=$HOME/java.security.properties"
+
+According to this (blog)[http://blog.eyallupu.com/2012/11/how-to-overriding-java-security.html] entry, each user can have their own overrides
+to the default security policy file as long as that file contains
+the line:
+
+    security.overridePropertiesFile=true
+
+By default, OpenJDK on RHEL and Oracle Java meet this criteria so
+its possible to include a java option on the command line to override
+the security policy file.
+
+After making the above changes to the `$HOME/bin/standalone.conf`
+file, copy the security providers from the default policy file to
+`$HOME/java.security.properties` and add the configuration for the
+BCFIPS provider as the first security provider, modify the internal
+ssl provider to use BCFIPS, and renumber the rest. Your
+`$HOME/java.security.properties` file should resemble this:
+
+    # We can override the values in the JRE_HOME/lib/security/java.security
+    # file here.  If both properties files specify values for the same key, the
+    # value from the command-line properties file is selected, as it is the last
+    # one loaded.  We can reorder and change security providers in this file.
+    security.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
+    security.provider.2=com.sun.net.ssl.internal.ssl.Provider
+    security.provider.3=sun.security.provider.Sun
+    security.provider.4=sun.security.rsa.SunRsaSign
+    security.provider.5=sun.security.ec.SunEC
+    security.provider.6=com.sun.crypto.provider.SunJCE
+    security.provider.7=sun.security.jgss.SunProvider
+    security.provider.8=com.sun.security.sasl.Provider
+    security.provider.9=org.jcp.xml.dsig.internal.dom.XMLDSigRI
+    security.provider.10=sun.security.smartcardio.SunPCSC
+    security.provider.11=apple.security.AppleProvider
+
+This configuration makes the Bouncy Castle provider the default
+provider.  To strictly run in "FIPS mode" the Sun internal SSL
+provider would need to match
+
+    security.provider.2=com.sun.net.ssl.internal.ssl.Provider BCFIPS
+
+however, this is not possible due to the use of a wrapped TrustManager
+in EAP 6.
+
+Copy the `bc-fips-1.0.0.jar` to the `$JRE_HOME/lib/ext` endorsed
+extensions directory.
+
+Add the jbossweb Self-signed Certificate
+----------------------------------------
+
+Use `keytool` with the BCFIPS provider and BCFKS Keystore to add a
+jbossweb self-signed certificate.  Make sure that you use the correct
+path to the `bc-fips-1.0.0.jar` provider library.
+
+    bash-3.2$ cd $JBOSS_HOME/vault
+    bash-3.2$ keytool -genkeypair \
+                      -alias jbossweb \
+                      -keyalg RSA \
+                      -keysize 3072 \
+                      -dname "CN=Vault Cert, OU=JBoss, O=Red Hat, L=Raleigh, S=NC, C=US" \
+                      -validity 365 \
+                      -keypass 'admin1jboss!' \
+                      -keystore vault.bcfks \
+                      -storepass 'admin1jboss!' \
+                      -storetype BCFKS \
+                      -providername BCFIPS \
+                      -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
+                      -providerpath /path/to/bc-fips-1.0.0.jar \
+                      -v
+
+Use the following command to verify that the secret key and the
+certificate are present in the BCFKS keystore.  Make sure that you
+use the correct path to the `bc-fips-1.0.0.jar` provider library.
+
+    bash-3.2$ cd $JBOSS_HOME/vault
+    bash-3.2$ keytool -list \
+                      -keystore vault.bcfks \
+                      -storepass 'admin1jboss!' \
+                      -storetype BCFKS \
+                      -providername BCFIPS \
+                      -providerpath /path/to/bc-fips-1.0.0.jar \
+                      -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
+                      -v
+
+Add the https Connector to the Server Configuration
+---------------------------------------------------
+
+Edit the server configuration file (e.g. `standalone.xml`) to use
+the BCFKS file as the keystore and get the keystore password from
+the vault.  The server configuration file should have the following
+stanza in the web subsystem configuration:
+
+        ...
+        <subsystem xmlns="urn:jboss:domain:web:2.2" default-virtual-server="default-host" native="false">
+            <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"/>
+            <connector name="https" protocol="HTTP/1.1" scheme="https" socket-binding="https" secure="true">
+                <ssl name="https" key-alias="jbossweb" password="${VAULT::keystore::password::1}" certificate-key-file="${jboss.home.dir}/vault/vault.bcfks"
+                    cipher-suite="SSL_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_anon_WITH_AES_128_CBC_SHA, TLS_ECDH_anon_WITH_AES_256_CBC_SHA"
+                    keystore-type="BCFKS" protocol="TLSv1.2"/>
+            </connector>
+            <virtual-server name="default-host" enable-welcome-root="true">
+            ...
+
+Test the TLS Configuration
+--------------------------
+
+Now, launch the EAP server and then browse to the secured website.
+To launch the server:
+
+    bash-3.2$ cd $JBOSS_HOME
+    bash-3.2$ bin/standalone.sh
+
+Browse to the following URL to see the secured web site leveraging
+BCFKS and the vaulted keystore password:
+
+    https://127.0.0.1:8443
+
+Since this is a self-signed certificate, you'll need to confirm the
+exception to the normal trust chains.
