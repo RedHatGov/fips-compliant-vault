@@ -388,6 +388,7 @@ Add a Self-signed Certificate to a BCFKS Keystore
 This example uses `keytool` to create and add a self-signed certificate
 to a BCFKS type keystore.
 
+    bash-3.2$ cd $JBOSS_HOME/vault
     bash-3.2$ keytool -genkeypair \
                       -alias jbossweb \
                       -keyalg RSA \
@@ -395,10 +396,15 @@ to a BCFKS type keystore.
                       -dname "CN=Vault Cert, OU=JBoss, O=Red Hat, L=Raleigh, S=NC, C=US" \
                       -validity 365 \
                       -keypass 'admin1jboss!' \
-                      -keystore vault.bcfks \
+                      -keystore ./vault.bcfks \
                       -storepass 'admin1jboss!' \
                       -storetype BCFKS \
                       -providername BCFIPS \
                       -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
-                      -providerpath /Users/rlucente/NotBackedUp/bc-fips-1.0.0.jar \
+                      -providerpath $HOME/NotBackedUp/bc-fips-1.0.0.jar \
                       -v
+
+    Generating 3,072 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 365 days
+        for: CN=Vault Cert, OU=JBoss, O=Red Hat, L=Raleigh, ST=NC, C=US
+    [Storing vault.bcfks]
+
