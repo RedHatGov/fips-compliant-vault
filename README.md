@@ -344,3 +344,61 @@ are:
 * the literal '{CMDC[:expiration_in_millis]}...'  The CMDC variant of CMD will cache the passwords for the optional expiration_in_millis milliseconds.  Default cache expiration is 0 = infinity.
 * the literal '{CLASS[@modulename]}classname[:ctorargs]' where the '[:ctorargs]' is an optional string delimited by the ':' from the classname that will be passed to the classname ctor. The ctorargs itself is a comma delimited list of strings. The password is obtained from classname by invoking a 'char[] toCharArray()' method if found, otherwise, the 'String toString()'
 
+Using Keytool to Manipulate the BCFKS Keystore
+==============================================
+
+The Bouncy Castle FIPS provider uses a special keystore type, BCFKS
+(the Bouncy Castle FIPS KeyStore).  This can be used with the tool
+`keytool` that is often included in java distributions.  The examples
+below illustrate how to do this.
+
+List all Entries in a BCFKS Keystore
+------------------------------------
+
+This example uses `keytool` to list all the entries in a BCFKS type
+keystore.  Make sure that the `providerpath` option matches your
+installation.
+
+    bash-3.2$ cd $JBOSS_HOME/vault
+    bash-3.2$ keytool -list \
+                      -keystore ./vault.bcfks \
+                      -storepass 'admin1jboss!' \
+                      -storetype BCFKS \
+                      -providername BCFIPS \
+                      -providerpath $HOME/NotBackedUp/bc-fips-1.0.0.jar \
+                      -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
+                      -v
+    
+    Keystore type: BCFKS
+    Keystore provider: BCFIPS
+    
+    Your keystore contains 1 entry
+    
+    Alias name: adminKey
+    Creation date: Feb 6, 2017
+    Entry type: SecretKeyEntry
+    
+    
+    *******************************************
+    *******************************************
+
+Add a Self-signed Certificate to a BCFKS Keystore
+-------------------------------------------------
+
+This example uses `keytool` to create and add a self-signed certificate
+to a BCFKS type keystore.
+
+    bash-3.2$ keytool -genkeypair \
+                      -alias jbossweb \
+                      -keyalg RSA \
+                      -keysize 3072 \
+                      -dname "CN=Vault Cert, OU=JBoss, O=Red Hat, L=Raleigh, S=NC, C=US" \
+                      -validity 365 \
+                      -keypass 'admin1jboss!' \
+                      -keystore vault.bcfks \
+                      -storepass 'admin1jboss!' \
+                      -storetype BCFKS \
+                      -providername BCFIPS \
+                      -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
+                      -providerpath /Users/rlucente/NotBackedUp/bc-fips-1.0.0.jar \
+                      -v
