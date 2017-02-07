@@ -76,7 +76,9 @@ strings, please use the script without any arguments:
     $JBOSS_HOME/bin/fips-vault.sh
 
 This will prompt the user to provide the needed parameters and store
-sensitive strings in the vault.  An example session is below:
+sensitive strings in the vault.  An example session is below.  Please
+note that sensitive strings are shown for illustrative purposes,
+although the tool will hide these when run:
 <pre>
     bash-3.2$ cd $JBOSS_HOME
     bash-3.2$ bin/fips-vault.sh
