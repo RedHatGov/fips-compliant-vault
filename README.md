@@ -171,3 +171,155 @@ although the tool will hide these when run:
     Please enter a Digit::  0: Store a secured attribute  1: Check whether a secured attribute exists  2: Remove secured attribute  3: List all secured attributes  4: Exit
     <b>4</b>
 </pre>
+Use the Command Line to Initialize a Vault
+------------------------------------------
+
+In this example, a single command line is used to create the vault
+and store a value in it.  To see all of the options available,
+simply type the commands:
+
+    bash-3.2$ cd $JBOSS_HOME
+    bash-3.2$ bin/fips-vault.sh --help
+
+    usage: fips-vault.sh <empty> |  [-a <arg>] [-b <arg>] -c | -h | -r | -x <arg> [-d <arg>] [-e <arg>]  [-i <arg>] [-k <arg>] [-p <arg>]  [-s <arg>] [-t] [-v <arg>]
+     -a,--attribute <arg>           Attribute name
+     -b,--vault-block <arg>         Vault block
+     -c,--check-sec-attr            Check whether the secured attribute already exists in the vault
+     -d,--alias <arg>               Vault admin key alias.  DEFAULT 'adminKey'.
+     -e,--enc-dir <arg>             Directory containing encrypted files
+     -h,--help                      Help
+     -i,--iteration <arg>           Iteration count of at least 1000.  DEFAULT 1000.
+     -k,--keystore <arg>            Keystore URL
+     -p,--keystore-password <arg>   The plaintext password -OR- the base-64 encoded masked keystore password -OR- a valid password command
+     -r,--remove-sec-attr           Remove secured attribute from the Vault
+     -s,--salt <arg>                base-64 encoded salt of at least 128 bits in length before encoding.  DEFAULT random value generated.
+     -t,--create-keystore           Automatically create keystore when it doesn't exist
+     -v,--iv <arg>                  base-64 encoded initialization vector that's 128 bits in length before encoding.  DEFAULT random value generated.
+     -x,--sec-attr <arg>            Add secured attribute value (such as password) to store
+   
+Several options have reasonable defaults and can be omitted from
+the command.  The example below uses default values for alias,
+iteration count, salt, and initialization vector.  This creates a
+vault and stores a single attribute within it:
+
+    bash-3.2$ cd $JBOSS_HOME
+    bash-3.2$ bin/fips-vault.sh \
+        --enc-dir $JBOSS_HOME/vault \
+        --keystore $JBOSS_HOME/vault/vault.bcfks \
+        --create-keystore \
+        --keystore-password 'admin1jboss!' \
+        --vault-block keystore \
+        --attribute password \
+        --sec-attr 'admin1jboss!'
+
+    =========================================================================
+    
+      JBoss Vault
+    
+      JBOSS_HOME: /Users/rlucente/demo/eap-6.4/jboss-eap-6.4
+    
+      JAVA: java
+    
+    =========================================================================
+    
+    Feb 06, 2017 10:37:37 PM org.jboss.security.fips.plugins.FIPSSecurityVault setUpVault
+    INFO: FIPS000373: Generating a new admin key under alias (adminKey)
+    Feb 06, 2017 10:37:37 PM org.jboss.security.fips.plugins.FIPSSecurityVault init
+    INFO: FIPS000361: FIPS Security Vault Implementation Initialized and Ready
+    
+    ******************************************************************************
+    The secured attribute value has been stored in the password vault.  Please
+    make note of the following:
+    ******************************************************************************
+    Vault Block:keystore
+    Attribute Name:password
+    
+    The following string should be cut/pasted wherever this password occurs in the
+    EAP configuration file.  If you're changing an existing password in the vault,
+    the entry in the configuration file can remain the same:
+    
+    ${VAULT::keystore::password::1}
+    ******************************************************************************
+    
+    
+    ******************************************************************************
+    Copy the following <vault/> element to your standalone or domain configuration
+    file to enable the password vault.
+    ******************************************************************************
+        ...
+        </extensions>
+        <vault code="org.jboss.security.fips.plugins.FIPSSecurityVault" module="org.jboss.security.fips" >
+          <vault-option name="ENC_FILE_DIR" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/"/>
+          <vault-option name="INITIALIZATION_VECTOR" value="b6S24evfoySTTfBxrVxl6A=="/>
+          <vault-option name="ITERATION_COUNT" value="1000"/>
+          <vault-option name="KEYSTORE_ALIAS" value="adminKey"/>
+          <vault-option name="KEYSTORE_PASSWORD" value="MASK-e2o6hzOS+YoCTSbWF/EtRA=="/>
+          <vault-option name="KEYSTORE_URL" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/vault.bcfks"/>
+          <vault-option name="SALT" value="FR7kkBn+/jOFDO+t3yX1eQ=="/>
+        </vault>
+        <management>
+        ...
+    ******************************************************************************
+
+To store another attribute in the vault, simply reuse the values
+from above in the command line.  Here is an example that uses the
+defaults for alias and iteration count:
+
+    bash-3.2$ cd $JBOSS_HOME
+    bash-3.2$ bin/fips-vault.sh \
+        --enc-dir $JBOSS_HOME/vault \
+        --keystore $JBOSS_HOME/vault/vault.bcfks \
+        --keystore-password 'MASK-e2o6hzOS+YoCTSbWF/EtRA==' \
+        --salt 'FR7kkBn+/jOFDO+t3yX1eQ==' \
+        --iv 'b6S24evfoySTTfBxrVxl6A==' \
+        --vault-block database \
+        --attribute password \
+        --sec-attr 'This1$apa$$word'
+    
+    =========================================================================
+    
+      JBoss Vault
+    
+      JBOSS_HOME: /Users/rlucente/demo/eap-6.4/jboss-eap-6.4
+    
+      JAVA: java
+    
+    =========================================================================
+    
+    Feb 06, 2017 10:49:42 PM org.jboss.security.fips.plugins.FIPSSecurityVault init
+    INFO: FIPS000361: FIPS Security Vault Implementation Initialized and Ready
+    
+    ******************************************************************************
+    The secured attribute value has been stored in the password vault.  Please
+    make note of the following:
+    ******************************************************************************
+    Vault Block:database
+    Attribute Name:password
+    
+    The following string should be cut/pasted wherever this password occurs in the
+    EAP configuration file.  If you're changing an existing password in the vault,
+    the entry in the configuration file can remain the same:
+    
+    ${VAULT::database::password::1}
+    ******************************************************************************
+    
+    
+    ******************************************************************************
+    Copy the following <vault/> element to your standalone or domain configuration
+    file to enable the password vault.
+    ******************************************************************************
+        ...
+        </extensions>
+        <vault code="org.jboss.security.fips.plugins.FIPSSecurityVault" module="org.jboss.security.fips" >
+          <vault-option name="ENC_FILE_DIR" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/"/>
+          <vault-option name="INITIALIZATION_VECTOR" value="sk9z+FozVAilSB2oaSwLLg=="/>
+          <vault-option name="ITERATION_COUNT" value="1000"/>
+          <vault-option name="KEYSTORE_ALIAS" value="adminKey"/>
+          <vault-option name="KEYSTORE_PASSWORD" value="MASK-FHl3O8kWrNSUjVbR0DU6Gw=="/>
+          <vault-option name="KEYSTORE_URL" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/vault.bcfks"/>
+          <vault-option name="SALT" value="X7SXqofxOxjCKeTYBJ6Iew=="/>
+        </vault>
+        <management>
+        ...
+    ******************************************************************************
+    
