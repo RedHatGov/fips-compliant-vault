@@ -430,7 +430,7 @@ policy file, you can append the following to the
     # override the security providers
     JAVA_OPTS="$JAVA_OPTS -Djava.security.properties=$HOME/java.security.properties"
 
-According to this (blog)[http://blog.eyallupu.com/2012/11/how-to-overriding-java-security.html] entry, each user can have their own overrides
+According to this [blog](http://blog.eyallupu.com/2012/11/how-to-overriding-java-security.html) entry, each user can have their own overrides
 to the default security policy file as long as that file contains
 the line:
 
