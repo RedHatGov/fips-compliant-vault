@@ -333,7 +333,7 @@ Alternative Commands to Retrieve the Keystore Password
 As mentioned in the disclaimer, you can also use alternative commands
 to retrieve the keystore password since masking is really just
 obfuscating the password.  These commands are supplied in the
-keystore password parameter, rather running interactively or with
+keystore password parameter, whether running interactively or with
 the command line.  The full syntax for the alternative commands
 are:
 
