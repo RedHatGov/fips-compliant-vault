@@ -16,7 +16,7 @@ to their ongoing efforts to maintain certification.
 Disclaimer
 ----------
 
-Cryptography is hard.  Doing it well requires more expertise or
+Cryptography is hard.  Doing it well requires more expertise and
 special knowledge beyond the available documentation for the
 underlying java and bouncy castle interfaces.  If you find a hole,
 please let me know.  Seriously.  Also, if you're masking the keystore
