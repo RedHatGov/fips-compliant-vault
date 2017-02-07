@@ -56,16 +56,16 @@ public class VaultInteractiveSession {
 		}
 
 		while (encDir == null || encDir.length() == 0) {
-			encDir = console.readLine("Enter directory to store encrypted files: ");
+			encDir = console.readLine("\nEnter directory to store encrypted files: ");
 		}
 
 		while (keystoreURL == null || keystoreURL.length() == 0) {
-			keystoreURL = console.readLine("Enter Keystore URL: ");
+			keystoreURL = console.readLine("\nEnter Keystore URL: ");
 		}
 
 		String createKeystoreStr = null;
 		while (createKeystoreStr == null || createKeystoreStr.trim().isEmpty()) {
-			createKeystoreStr = console.readLine("Create the keystore if it doesn't exist <y/N>: ");
+			createKeystoreStr = console.readLine("\nCreate the keystore if it doesn't exist <y/N>: ");
 			if (createKeystoreStr.contains("Y") || createKeystoreStr.contains("y"))
 				createKeystore = true;
 		}
@@ -125,10 +125,10 @@ public class VaultInteractiveSession {
 					iv, createKeystore);
 
 			while (keystoreAlias == null || keystoreAlias.length() == 0) {
-				keystoreAlias = console.readLine("Enter Keystore Alias: ");
+				keystoreAlias = console.readLine("\nEnter Keystore Alias: ");
 			}
 
-			System.out.println("Initializing Vault");
+			System.out.println("\nInitializing Vault");
 			vaultNISession.startVaultSession(keystoreAlias);
 			vaultNISession.vaultConfigurationDisplay();
 

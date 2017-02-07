@@ -77,7 +77,7 @@ strings, please use the script without any arguments:
 
 This will prompt the user to provide the needed parameters and store
 sensitive strings in the vault.  An example session is below:
-
+<pre>
     bash-3.2$ cd $JBOSS_HOME
     bash-3.2$ bin/fips-vault.sh
     =========================================================================
@@ -94,57 +94,61 @@ sensitive strings in the vault.  An example session is below:
     ****  JBoss Vault  ***************
     **********************************
     Please enter a Digit::   0: Start Interactive Session  1: Remove Interactive Session  2: Exit
-    0
+    <b>0</b>
     Starting an interactive session
+
     Enter directory to store encrypted files: /Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault
+
     Enter Keystore URL: /Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/vault.bcfks
-    Create the keystore if it doesn't exist <y/N>: y
+ 
+    Create the keystore if it doesn't exist &lt;y/N&gt; y
     
-    Please enter the keystore password: 
-    Please confirm the keystore password: 
+    Please enter the keystore password:
+    Please confirm the keystore password:
     
     The salt must be at least 16 bytes in length, before base-64 encoding.
-    Enter salt as a base-64 string (or ENTER for a random value): 
+    Enter salt as a base-64 string (or ENTER for a random value):
     
     The iteration count must be at least 1000
     Enter iteration count as a number (Eg: 2000): 1000
     
     The initialization vector must be 16 bytes in length, before base-64 encoding.
-    Enter iv as a base-64 string (or ENTER for a random value): 
+    Enter iv as a base-64 string (or ENTER for a random value):
+    
     Enter Keystore Alias: adminKey
+    
     Initializing Vault
-    Feb 06, 2017 5:06:50 PM org.jboss.security.fips.plugins.FIPSSecurityVault setUpVault
+    Feb 06, 2017 10:05:24 PM org.jboss.security.fips.plugins.FIPSSecurityVault setUpVault
     INFO: FIPS000373: Generating a new admin key under alias (adminKey)
-    Feb 06, 2017 5:06:50 PM org.jboss.security.fips.plugins.FIPSSecurityVault init
+    Feb 06, 2017 10:05:24 PM org.jboss.security.fips.plugins.FIPSSecurityVault init
     INFO: FIPS000361: FIPS Security Vault Implementation Initialized and Ready
     
-    *******************************************
-    Copy the following <vault/> element to your
-    standalone or domain configuration file to
-    enable the password vault.
-    *******************************************
+    ******************************************************************************
+    Copy the following &lt;vault/&gt; element to your standalone or domain configuration
+    file to enable the password vault.
+    ******************************************************************************
         ...
-        </extensions>
-        <vault code="org.jboss.security.fips.plugins.FIPSSecurityVault" module="org.jboss.security.fips" >
-          <vault-option name="ENC_FILE_DIR" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/"/>
-          <vault-option name="INITIALIZATION_VECTOR" value="DOlNP10ToARAO7VtW23Nwg=="/>
-          <vault-option name="ITERATION_COUNT" value="1000"/>
-          <vault-option name="KEYSTORE_ALIAS" value="adminKey"/>
-          <vault-option name="KEYSTORE_PASSWORD" value="MASK-vUGBkyW1mjdK9MDDJKMEGQ=="/>
-          <vault-option name="KEYSTORE_URL" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/vault.bcfks"/>
-          <vault-option name="SALT" value="nzCeFZAeXbkCNi3Vh5+oeQ=="/>
-        </vault>
-        <management>
+        &lt;/extensions&gt;
+        &lt;vault code="org.jboss.security.fips.plugins.FIPSSecurityVault" module="org.jboss.security.fips" &gt;
+          &lt;vault-option name="ENC_FILE_DIR" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/"/&gt;
+          &lt;vault-option name="INITIALIZATION_VECTOR" value="vXpgRFPSf0qjcb9jQzSHBA=="/&gt;
+          &lt;vault-option name="ITERATION_COUNT" value="1000"/&gt;
+          &lt;vault-option name="KEYSTORE_ALIAS" value="adminKey"/&gt;
+          &lt;vault-option name="KEYSTORE_PASSWORD" value="MASK-vFQdk4C7AVQulTRLaxBOfg=="/&gt;
+          &lt;vault-option name="KEYSTORE_URL" value="/Users/rlucente/demo/eap-6.4/jboss-eap-6.4/vault/vault.bcfks"/&gt;
+          &lt;vault-option name="SALT" value="lL2/jeZ2Hu09C+2Tcyd9AQ=="/&gt;
+        &lt;vault&gt;
+        &lt;management&gt;
         ...
-    *******************************************
+    ******************************************************************************
     
     Vault is initialized and ready for use
     Please enter a Digit::  0: Store a secured attribute  1: Check whether a secured attribute exists  2: Remove secured attribute  3: List all secured attributes  4: Exit
     0
     Task: Store a secured attribute
     
-    Please enter the secured attribute value (e.g. a password): 
-    Please confirm the secured attribute value (e.g. a password): 
+    Please enter the secured attribute value (e.g. a password):
+    Please confirm the secured attribute value (e.g. a password):
     Enter Vault Block: keystore
     Enter Attribute Name: password
     
@@ -163,12 +167,5 @@ sensitive strings in the vault.  An example session is below:
     ******************************************************************************
     
     Please enter a Digit::  0: Store a secured attribute  1: Check whether a secured attribute exists  2: Remove secured attribute  3: List all secured attributes  4: Exit
-    3
-    Task:  List all secured attributes formatted as <vault-block>::<attribute>
-    
-    	keystore::password
-    
-    Please enter a Digit::  0: Store a secured attribute  1: Check whether a secured attribute exists  2: Remove secured attribute  3: List all secured attributes  4: Exit
     4
-    bash-3.2$ exit
-
+</pre>

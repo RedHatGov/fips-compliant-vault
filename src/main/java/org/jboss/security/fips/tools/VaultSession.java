@@ -363,17 +363,16 @@ public final class VaultSession {
 	 */
 	public void vaultConfigurationDisplay() {
 		System.out.println();
-		System.out.println("*******************************************");
-		System.out.println("Copy the following <vault/> element to your");
-		System.out.println("standalone or domain configuration file to");
-		System.out.println("enable the password vault.");
-		System.out.println("*******************************************");
+		System.out.println("******************************************************************************");
+		System.out.println("Copy the following <vault/> element to your standalone or domain configuration");
+		System.out.println("file to enable the password vault.");
+		System.out.println("******************************************************************************");
 		System.out.println("    ...");
 		System.out.println("    </extensions>");
 		System.out.println(vaultConfiguration());
 		System.out.println("    <management>");
 		System.out.println("    ...");
-		System.out.println("*******************************************");
+		System.out.println("******************************************************************************");
 		System.out.println();
 	}
 
