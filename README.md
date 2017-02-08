@@ -355,8 +355,7 @@ List all Entries in a BCFKS Keystore
 ------------------------------------
 
 This example uses `keytool` to list all the entries in a BCFKS type
-keystore.  Make sure that the `providerpath` option matches your
-installation.
+keystore.
 
     bash-3.2$ cd $JBOSS_HOME/vault
     bash-3.2$ keytool -list \
@@ -364,7 +363,6 @@ installation.
                       -storepass 'admin1jboss!' \
                       -storetype BCFKS \
                       -providername BCFIPS \
-                      -providerpath /path/to/bc-fips-1.0.0.jar \
                       -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
                       -v
     
@@ -385,8 +383,7 @@ Add a Self-signed Certificate to a BCFKS Keystore
 -------------------------------------------------
 
 This example uses `keytool` to create and add a self-signed certificate
-to a BCFKS type keystore.  Make sure that the `providerpath` option
-matches your installation.
+to a BCFKS type keystore.
 
     bash-3.2$ cd $JBOSS_HOME/vault
     bash-3.2$ keytool -genkeypair \
@@ -401,7 +398,6 @@ matches your installation.
                       -storetype BCFKS \
                       -providername BCFIPS \
                       -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
-                      -providerpath /path/to/bc-fips-1.0.0.jar \
                       -v
 
     Generating 3,072 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 365 days
