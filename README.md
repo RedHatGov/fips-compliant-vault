@@ -414,9 +414,8 @@ vault.
 Users may desire to run the SunJSSE provider, which contains the
 SSL/TLS implementation, in FIPS 140 compliant mode.  This is often
 referred to as "FIPS mode".  See full discussion [here](http://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/FIPS.html).  This is not
-yet possible with either EAP 6 or EAP 7 due to several issues,
-including use of a wrapped JSSE TrustManager as documented in this
-[JIRA](https://issues.jboss.org/browse/JBEAP-3788).
+yet possible with either EAP 6 or EAP 7 due to several issues which
+are tracked by this [JIRA](https://issues.jboss.org/browse/JBEAP-4120).
 
 With EAP 6 and 7, it is possible to use the BCFIPS provider to mask
 the keystore password and leverage the Bouncy Castle FIPS KeyStore
@@ -473,7 +472,7 @@ provider would need to match
     security.provider.2=com.sun.net.ssl.internal.ssl.Provider BCFIPS
 
 however, this is not possible with both EAP 6.4 and EAP 7.0 due to
-several issues noted above.
+several issues tracked by this [JIRA](https://issues.jboss.org/browse/JBEAP-4120).
 
 Copy the `bc-fips-1.0.0.jar` to the `$JRE_HOME/lib/ext` endorsed
 extensions directory.
