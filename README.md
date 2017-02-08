@@ -407,6 +407,10 @@ to a BCFKS type keystore.
 Combining TLS Secured Web with BCFIPS on EAP
 ============================================
 
+This section contains full instructions to set up TLS secured web
+listeners for both EAP 6.4 and EAP 7 using the BCFIPS password
+vault.
+
 Users may desire to run the SunJSSE provider, which contains the
 SSL/TLS implementation, in FIPS 140 compliant mode.  This is often
 referred to as "FIPS mode".  See full discussion [here](http://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/FIPS.html).  This is not
@@ -474,6 +478,44 @@ several issues noted above.
 Copy the `bc-fips-1.0.0.jar` to the `$JRE_HOME/lib/ext` endorsed
 extensions directory.
 
+Create Vault and Add KeyStore Password
+--------------------------------------
+
+Use the command line to quickly create the vault and add the keystore password to it.
+
+    bash-3.2$ cd $JBOSS_HOME
+    bash-3.2$ bin/fips-vault.sh \
+              --enc-dir vault \
+              --keystore vault/vault.bcfks \
+              --create-keystore \
+              --keystore-password 'admin1jboss!' \
+              --vault-block keystore \
+              --attribute password \
+              --sec-attr 'admin1jboss!'
+
+Copy the Vault Stanza to the Server Configuration
+-------------------------------------------------
+
+Edit `$JBOSS_HOME/standalone/configuration/standalone.xml` to include
+the <vault/> stanza output by the above command.  Since the vault
+is located in `$JBOSS_HOME/vault`, use the built-in property
+`jboss.home.dir` to shorten the file paths as shown in the example
+below:
+
+    ...
+    </extensions>
+    <vault code="org.jboss.security.fips.plugins.FIPSSecurityVault" module="org.jboss.security.fips" >
+      <vault-option name="ENC_FILE_DIR" value="${jboss.home.dir}/vault/"/>
+      <vault-option name="INITIALIZATION_VECTOR" value="5kK/Fpz5TQIgPzONinLPwg=="/>
+      <vault-option name="ITERATION_COUNT" value="1000"/>
+      <vault-option name="KEYSTORE_ALIAS" value="adminKey"/>
+      <vault-option name="KEYSTORE_PASSWORD" value="MASK-M9U4ehbH/X+qvgq1innmlg=="/>
+      <vault-option name="KEYSTORE_URL" value="${jboss.home.dir}/vault/vault.bcfks"/>
+      <vault-option name="SALT" value="2JLKJlkl7gvCbllh9pom/g=="/>
+    </vault>
+    <management>
+    ...
+
 Add the jbossweb Self-signed Certificate
 ----------------------------------------
 
@@ -519,7 +561,7 @@ stanza in the web subsystem configuration:
         <subsystem xmlns="urn:jboss:domain:web:2.2" default-virtual-server="default-host" native="false">
             <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"/>
             <connector name="https" protocol="HTTP/1.1" scheme="https" socket-binding="https" secure="true">
-                <ssl name="https" key-alias="jbossweb" password="${VAULT::keystore::password::1}" certificate-key-file="${jboss.home.dir}/vault/vault.bcfks"
+                <ssl name="https" key-alias="jbossweb" password="${VAULT::keystore::storepass::1}" certificate-key-file="${jboss.home.dir}/vault/vault.bcfks"
                     cipher-suite="SSL_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_anon_WITH_AES_128_CBC_SHA, TLS_ECDH_anon_WITH_AES_256_CBC_SHA"
                     keystore-type="BCFKS" protocol="TLSv1.2"/>
             </connector>
@@ -540,7 +582,7 @@ in the undertow https-listener:
             <security-realm name="HTTPSRealm">
                 <server-identities>
                     <ssl>
-                        <keystore provider="BCFKS" path="vault/vault.bcfks" relative-to="jboss.home.dir" keystore-password="${VAULT::keystore::password::1}" alias="jbossweb"/>
+                        <keystore provider="BCFKS" path="vault/vault.bcfks" relative-to="jboss.home.dir" keystore-password="${VAULT::keystore::storepass::1}" alias="jbossweb"/>
                     </ssl>
                 </server-identities>
             </security-realm>
