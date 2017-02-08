@@ -489,7 +489,7 @@ Use the command line to quickly create the vault and add the keystore password t
               --create-keystore \
               --keystore-password 'admin1jboss!' \
               --vault-block keystore \
-              --attribute password \
+              --attribute storepass \
               --sec-attr 'admin1jboss!'
 
 Copy the Vault Stanza to the Server Configuration
