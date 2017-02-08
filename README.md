@@ -408,22 +408,21 @@ matches your installation.
         for: CN=Vault Cert, OU=JBoss, O=Red Hat, L=Raleigh, ST=NC, C=US
     [Storing vault.bcfks]
 
-Combining TLS Secured Web with BCFIPS
-=====================================
+Combining TLS Secured Web with BCFIPS on EAP
+============================================
 
 Users may desire to run the SunJSSE provider, which contains the
 SSL/TLS implementation, in FIPS 140 compliant mode.  This is often
 referred to as "FIPS mode".  See full discussion [here](http://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/FIPS.html).  This is not
-possible with EAP 6 due to the use of a wrapped JSSE TrustManager
-as documented in this [JIRA](https://issues.jboss.org/browse/JBEAP-3788).  With EAP 7.x, you can add the command
-line option:
+yet possible with either EAP 6 or EAP 7 due to several issues,
+including use of a wrapped JSSE TrustManager as documented in this
+[JIRA](https://issues.jboss.org/browse/JBEAP-3788).
 
-    -Djboss.as.management.security.disable-dynamic-trust-manager=true
-
-to disable the wrapped TrustManager so that "FIPS mode" is available.
-On EAP 6, it is possible to use the BCFIPS provider to mask the
-keystore password and leverage the Bouncy Castle FIPS KeyStore
-(BCFKS) to store the certificates.
+With EAP 6 and 7, it is possible to use the BCFIPS provider to mask
+the keystore password and leverage the Bouncy Castle FIPS KeyStore
+(BCFKS) to store the certificates.  Although not strictly "FIPS
+mode", this does provide FIPS compliant cryptography for storing
+sensitive strings combined with TLS web connections.
 
 Override the Default java.security Policy
 -----------------------------------------
@@ -435,7 +434,7 @@ policy file, you can append the following to the
     # override the security providers
     JAVA_OPTS="$JAVA_OPTS -Djava.security.properties=$HOME/java.security.properties"
 
-According to this [blog](http://blog.eyallupu.com/2012/11/how-to-overriding-java-security.html) entry, each user can have their own overrides
+As discussed in this [blog](http://blog.eyallupu.com/2012/11/how-to-overriding-java-security.html) entry, each user can have their own overrides
 to the default security policy file as long as that file contains
 the line:
 
@@ -445,11 +444,10 @@ By default, OpenJDK on RHEL and Oracle Java meet this criteria so
 its possible to include a java option on the command line to override
 the security policy file.
 
-After making the above changes to the `$HOME/bin/standalone.conf`
+After making the above changes to the `$JBOSS_HOME/bin/standalone.conf`
 file, copy the security providers from the default policy file to
 `$HOME/java.security.properties` and add the configuration for the
-BCFIPS provider as the first security provider, modify the internal
-ssl provider to use BCFIPS, and renumber the rest. Your
+BCFIPS provider as the first security provider and renumber the rest. Your
 `$HOME/java.security.properties` file should resemble this:
 
     # We can override the values in the JRE_HOME/lib/security/java.security
@@ -474,8 +472,8 @@ provider would need to match
 
     security.provider.2=com.sun.net.ssl.internal.ssl.Provider BCFIPS
 
-however, this is not possible due to the use of a wrapped TrustManager
-in EAP 6.
+however, this is not possible with both EAP 6.4 and EAP 7.0 due to
+several issues noted above.
 
 Copy the `bc-fips-1.0.0.jar` to the `$JRE_HOME/lib/ext` endorsed
 extensions directory.
@@ -484,8 +482,7 @@ Add the jbossweb Self-signed Certificate
 ----------------------------------------
 
 Use `keytool` with the BCFIPS provider and BCFKS Keystore to add a
-jbossweb self-signed certificate.  Make sure that you use the correct
-path to the `bc-fips-1.0.0.jar` provider library.
+jbossweb self-signed certificate.
 
     bash-3.2$ cd $JBOSS_HOME/vault
     bash-3.2$ keytool -genkeypair \
@@ -500,12 +497,10 @@ path to the `bc-fips-1.0.0.jar` provider library.
                       -storetype BCFKS \
                       -providername BCFIPS \
                       -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
-                      -providerpath /path/to/bc-fips-1.0.0.jar \
                       -v
 
 Use the following command to verify that the secret key and the
-certificate are present in the BCFKS keystore.  Make sure that you
-use the correct path to the `bc-fips-1.0.0.jar` provider library.
+certificate are present in the BCFKS keystore.
 
     bash-3.2$ cd $JBOSS_HOME/vault
     bash-3.2$ keytool -list \
@@ -513,12 +508,11 @@ use the correct path to the `bc-fips-1.0.0.jar` provider library.
                       -storepass 'admin1jboss!' \
                       -storetype BCFKS \
                       -providername BCFIPS \
-                      -providerpath /path/to/bc-fips-1.0.0.jar \
                       -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
                       -v
 
-Add the https Connector to the Server Configuration
----------------------------------------------------
+Edit the Server Configuration for EAP 6.4
+-----------------------------------------
 
 Edit the server configuration file (e.g. `standalone.xml`) to use
 the BCFKS file as the keystore and get the keystore password from
@@ -535,6 +529,31 @@ stanza in the web subsystem configuration:
             </connector>
             <virtual-server name="default-host" enable-welcome-root="true">
             ...
+
+Edit the Server Configuration for EAP 7.0
+-----------------------------------------
+
+Edit the server configuration file (e.g. `standalone.xml`) to use
+the BCFKS file as the keystore and get the keystore password from
+the vault.  The server configuration file should have the following
+stanzas to add the HTTPSRealm security realm and then reference it
+in the undertow https-listener:
+
+        ...
+            </security-realm>
+            <security-realm name="HTTPSRealm">
+                <server-identities>
+                    <ssl>
+                        <keystore provider="BCFKS" path="vault/vault.bcfks" relative-to="jboss.home.dir" keystore-password="${VAULT::keystore::password::1}" alias="jbossweb"/>
+                    </ssl>
+                </server-identities>
+            </security-realm>
+        </security-realms>
+        ...
+                <http-listener name="default" socket-binding="http" redirect-socket="https"/>
+                <https-listener name="https" enabled-cipher-suites="SSL_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_anon_WITH_AES_128_CBC_SHA, TLS_ECDH_anon_WITH_AES_256_CBC_SHA" security-realm="HTTPSRealm" enabled-protocols="TLSv1.2" socket-binding="https"/>
+                <host name="default-host" alias="localhost">
+        ...
 
 Test the TLS Configuration
 --------------------------
