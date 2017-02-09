@@ -32,14 +32,14 @@ import org.jboss.security.vault.SecurityVault;
 import org.jboss.security.vault.SecurityVaultException;
 
 import javax.crypto.SecretKey;
+
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.security.*;
 import java.security.KeyStore.Entry;
 import java.util.Map;
@@ -429,6 +429,7 @@ public class FIPSSecurityVault implements SecurityVault {
 
 	/**
 	 * Write the vault data to the filesystem
+	 * 
 	 * @throws IOException
 	 */
 	private void writeVaultData() throws IOException {
@@ -462,19 +463,16 @@ public class FIPSSecurityVault implements SecurityVault {
 		return file != null && file.exists() && file.isDirectory();
 	}
 
-	private void safeClose(InputStream fis) {
+	/**
+	 * Silently close a resource
+	 * 
+	 * @param c
+	 *            the resource to close
+	 */
+	private void safeClose(Closeable c) {
 		try {
-			if (fis != null) {
-				fis.close();
-			}
-		} catch (Throwable t) {
-		}
-	}
-
-	private void safeClose(OutputStream os) {
-		try {
-			if (os != null) {
-				os.close();
+			if (c != null) {
+				c.close();
 			}
 		} catch (Throwable t) {
 		}
