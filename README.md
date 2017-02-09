@@ -22,7 +22,7 @@ underlying java and bouncy castle interfaces.  If you find a hole,
 please let me know.  Seriously.  Also, if you're masking the keystore
 password, be aware that this is more obfuscation than making the
 password secure.  If you truly want a secure password, investigate
-the [alternative password commands](#Alternative-Commands-to-Retrieve-the-Keystore-Password) available to use host executables
+the [alternative password commands](#alternative-commands-to-retrieve-the-keystore-password) available to use host executables
 or custom class files to retrieve the keystore password.
 
 Build and Install the Vault
