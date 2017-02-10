@@ -159,7 +159,10 @@ public class VaultTool {
 		options = new Options();
 		options.addOption("k", KEYSTORE_PARAM, true, "Keystore URL");
 		options.addOption("p", KEYSTORE_PASSWORD_PARAM, true, "The plaintext password -OR- "
-				+ "the base-64 encoded masked keystore password -OR- " + "a valid password command");
+				+ "the base-64 encoded masked keystore password -OR- " + "a valid password command.  "
+				+ "It's a bad idea to send a plaintext password as it is parsed and stored as an immutable String in java."
+				+ "  Users should instead send a masked encrypted password on the command line or a password command to "
+				+ "retrieve the password securely.  Use the interactive version of fips-vault to create the initial vault.");
 		options.addOption("e", ENC_DIR_PARAM, true, "Directory containing encrypted files");
 		options.addOption("s", SALT_PARAM, true,
 				"base-64 encoded salt of at least 128 bits in length before encoding.  "
