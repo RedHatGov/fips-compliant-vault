@@ -592,19 +592,24 @@ in the undertow https-listener:
                 <host name="default-host" alias="localhost">
         ...
 
-You can actually run the above configuration in "FIPS mode" where the java.security policy file or java.security.properties override contain the lines:
+Running EAP 7 in FIPS Mode
+--------------------------
+
+You can actually run the above configuration in "FIPS mode" where
+either the java.security policy file or java.security.properties
+override contain the lines:
 
     security.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
     security.provider.2=com.sun.net.ssl.internal.ssl.Provider BCFIPS
 
-To get this configuration to work, simply omit the `alias` attribute
-from the `keystore` element in the HTTPSRealm definition.  This
-will work as long as the `keystore` element still contains the
-`keystore-password` attribute and the `keystore.bcfks` file only
-contains the vault SecretKey entry and one PrivateKeyEntry with its
-certificate chain.  WildFly 10.1.0.Final and later resolve the
-underlying issue in the internal key manager and this fix will be
-included in EAP 7.1.
+To get this configuration to work in FIPS mode, simply omit the
+`alias` attribute from the `keystore` element in the HTTPSRealm
+definition.  This will work as long as the `keystore` element still
+contains the `keystore-password` attribute and the `keystore.bcfks`
+file only contains the vault SecretKey entry and one PrivateKeyEntry
+with its certificate chain.  WildFly 10.1.0.Final and later resolve
+the underlying issue in the internal key manager and this fix will
+be included in EAP 7.1.
 
 Test the TLS Configuration
 --------------------------
