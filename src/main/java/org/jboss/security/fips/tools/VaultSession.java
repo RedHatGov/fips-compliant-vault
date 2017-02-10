@@ -129,6 +129,8 @@ public final class VaultSession {
 		char[] maskPrefix = Arrays.copyOf(rawKeystorePassword, FIPSSecurityVault.PASS_MASK_PREFIX.length());
 
 		if (Util.isPasswordCommand(rawKeystorePassword) || Arrays.equals(passwordMask, maskPrefix)) {
+			// this is safe since it's either a masked encrypted password or a
+			// command to retrieve the password
 			keystoreMaskedPassword = new String(rawKeystorePassword);
 		} else { // plain text password so encrypt it
 			keystoreMaskedPassword = computeMaskedPassword();
