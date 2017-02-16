@@ -183,6 +183,8 @@ public class FIPSSecurityVault implements SecurityVault {
 			throw new SecurityVaultException(FIPSVaultMessages.MESSAGES
 					.ivLengthDoesNotMatchBlockSizeMessage(INITIALIZATION_VECTOR, CryptoUtil.KEY_STRENGTH));
 
+		CryptoUtil.setDefaultDrbg(saltStr, ivStr);
+		
 		String iterationCountStr = (String) options.get(ITERATION_COUNT);
 		if (iterationCountStr == null)
 			throw new SecurityVaultException(

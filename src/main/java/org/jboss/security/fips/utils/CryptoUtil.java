@@ -20,6 +20,11 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.EntropySourceProvider;
+import org.bouncycastle.crypto.fips.FipsDRBG;
+import org.bouncycastle.crypto.util.BasicEntropySourceProvider;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -264,6 +269,25 @@ public class CryptoUtil {
 		}
 
 		return first;
+	}
+
+	/**
+	 * Create a new SecureRandom
+	 * 
+	 * @param personalizationStr
+	 *            unique information to differentiate this instance
+	 * @param nonceStr
+	 *            unique information to differentiate this instance
+	 */
+	public static void setDefaultDrbg(String personalizationStr, String nonceStr) {
+		byte[] personalization = StringUtil.convertToBytes(personalizationStr.toCharArray());
+		byte[] nonce = StringUtil.convertToBytes(nonceStr.toCharArray());
+
+		EntropySourceProvider entSource = new BasicEntropySourceProvider(new SecureRandom(), true);
+		FipsDRBG.Builder drgbBldr = FipsDRBG.SHA512_HMAC.fromEntropySource(entSource).setSecurityStrength(256)
+				.setEntropyBitsRequired(256).setPersonalizationString(personalization);
+
+		CryptoServicesRegistrar.setSecureRandom(drgbBldr.build(nonce, true));
 	}
 
 	/**
