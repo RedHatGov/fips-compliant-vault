@@ -42,7 +42,6 @@
     <dependencySet>
       <outputDirectory>modules/org/jboss/security/fips/main</outputDirectory>
       <includes>
-        <include>commons-cli:commons-cli</include>
         <include>org.bouncycastle:bc-fips</include>
       </includes>
     </dependencySet>
