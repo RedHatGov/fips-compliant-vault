@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <assembly>
   <id>dist</id>
   <includeBaseDirectory>false</includeBaseDirectory>
@@ -25,19 +26,19 @@
       <fileMode>0755</fileMode>
     </fileSet>
   </fileSets>
-      <files>
-        <file>
-          <source>target/classes/vault-module.xml</source>
-          <outputDirectory>modules/org/jboss/security/fips/main</outputDirectory>
-          <destName>module.xml</destName>
-        </file>
-        <file>
-          <source>target/classes/tool-module.xml</source>
-          <outputDirectory>modules/org/jboss/security/fips/vault-tool/main</outputDirectory>
-          <destName>module.xml</destName>
-        </file>
-      </files>
-<dependencySets>
+  <files>
+    <file>
+      <source>target/classes/vault-module.xml</source>
+      <outputDirectory>modules/org/jboss/security/fips/main</outputDirectory>
+      <destName>module.xml</destName>
+    </file>
+    <file>
+      <source>target/classes/tool-module.xml</source>
+      <outputDirectory>modules/org/jboss/security/fips/vault-tool/main</outputDirectory>
+      <destName>module.xml</destName>
+    </file>
+  </files>
+  <dependencySets>
     <dependencySet>
       <outputDirectory>modules/org/jboss/security/fips/main</outputDirectory>
       <includes>
@@ -45,5 +46,5 @@
         <include>org.bouncycastle:bc-fips</include>
       </includes>
     </dependencySet>
-</dependencySets>
+  </dependencySets>
 </assembly>
