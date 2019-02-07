@@ -31,6 +31,7 @@
       <source>target/classes/vault-module.xml</source>
       <outputDirectory>modules/org/jboss/security/fips/main</outputDirectory>
       <destName>module.xml</destName>
+      <filtered>true</filtered>
     </file>
     <file>
       <source>target/classes/tool-module.xml</source>

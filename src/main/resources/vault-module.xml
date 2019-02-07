@@ -24,8 +24,8 @@
 
 <module xmlns="urn:jboss:module:1.1" name="org.jboss.security.fips">
     <resources>
-        <resource-root path="bc-fips-1.0.0.jar"/>
-        <resource-root path="fips-compliant-vault-1.0.1.jar"/>
+        <resource-root path="bc-fips-${version.bc-fips}.jar"/>
+        <resource-root path="fips-compliant-vault-${project.version}.jar"/>
     </resources>
 
     <dependencies>
