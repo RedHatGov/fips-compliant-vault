@@ -36,11 +36,11 @@ and maven.  Please make sure that you have that tooling in place.
 In addtion, you need to get the certified Legion of the Bouncy
 Castle Java FIPS library from the [Bouncy Castle Java FIPS page](http://www.bouncycastle.org/fips-java/).
 After the click-through acknowledgement, download the provider
-`bc-fips-1.0.0.jar` file.  Next, add that jar file to your local maven
+`bc-fips-1.0.1.jar` file.  Next, add that jar file to your local maven
 repository.  In a terminal window, type the following command:
 
-    mvn install:install-file -Dfile=bc-fips-1.0.0.jar \
-        -DgroupId=org.bouncycastle -DartifactId=bc-fips -Dversion=1.0.0 \
+    mvn install:install-file -Dfile=bc-fips-1.0.1.jar \
+        -DgroupId=org.bouncycastle -DartifactId=bc-fips -Dversion=1.0.1 \
         -Dpackaging=jar
 
 Build and Deploy the Custom Vault
@@ -48,16 +48,16 @@ Build and Deploy the Custom Vault
 
 Building the custom vault is simple.
 
-    git clone https://github.com/rlucente-se-jboss/fips-compliant-vault.git -b bcfips
+    git clone https://github.com/RedHatGov/fips-compliant-vault.git -b bcfips
     cd fips-compliant-vault
     mvn clean package
 
 The results are assembled into a distribution zip file available
-in `target/fips-compliant-vault-1.0.0-dist.zip`.  To deploy the
+in `target/fips-compliant-vault-1.0.1-dist.zip`.  To deploy the
 vault, unzip the distribution file into your `$JBOSS_HOME` folder:
 
     export JBOSS_HOME=/path/to/java-eap-6.4
-    unzip -q target/fips-compliant-vault-1.0.0-dist.zip -d $JBOSS_HOME
+    unzip -q target/fips-compliant-vault-1.0.1-dist.zip -d $JBOSS_HOME
 
 Initialize and Populate the Vault
 =================================
@@ -474,7 +474,7 @@ provider would need to match
 however, this is not possible with both EAP 6.4 and EAP 7.0 due to
 several issues tracked by this [JIRA](https://issues.jboss.org/browse/JBEAP-4120).
 
-Copy the `bc-fips-1.0.0.jar` to the `$JRE_HOME/lib/ext` endorsed
+Copy the `bc-fips-1.0.1.jar` to the `$JRE_HOME/lib/ext` endorsed
 extensions directory.
 
 Create Vault and Add KeyStore Password
