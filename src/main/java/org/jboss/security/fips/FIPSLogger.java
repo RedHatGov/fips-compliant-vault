@@ -21,9 +21,12 @@
  */
 package org.jboss.security.fips;
 
-import org.jboss.logging.*;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
 
-@SuppressWarnings("deprecation")
 @MessageLogger(projectCode = "FIPS")
 public interface FIPSLogger extends BasicLogger {
 
