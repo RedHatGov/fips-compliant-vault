@@ -57,7 +57,7 @@
 		<!-- JBoss dependency versions -->
 		<version.org.jboss.as.parent>7.5.21.Final-redhat-1</version.org.jboss.as.parent>   <!-- JBoss EAP 6.4.21 -->
 
-		<version.bc-fips>1.0.0</version.bc-fips>
+		<version.bc-fips>1.0.1</version.bc-fips>
 
 		<version.maven-compiler-plugin>3.6.1</version.maven-compiler-plugin>
 		<version.maven-jar-plugin>3.0.2</version.maven-jar-plugin>
