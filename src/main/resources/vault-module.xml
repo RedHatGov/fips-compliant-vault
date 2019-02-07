@@ -24,13 +24,13 @@
 
 <module xmlns="urn:jboss:module:1.1" name="org.jboss.security.fips">
     <resources>
-        <resource-root path="bc-fips-1.0.0.jar"/>
-        <resource-root path="commons-cli-1.2.0.redhat-8.jar"/>
-        <resource-root path="fips-compliant-vault-1.0.0.jar"/>
+        <resource-root path="bc-fips-${version.bc-fips}.jar"/>
+        <resource-root path="fips-compliant-vault-${project.version}.jar"/>
     </resources>
 
     <dependencies>
         <module name="javax.api"/>
+        <module name="org.apache.commons.cli"/>
         <module name="org.jboss.logging"/>
         <module name="org.picketbox"/>
         <module name="sun.jdk"/>
